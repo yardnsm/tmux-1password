@@ -1,6 +1,6 @@
 # tmux-1password
 
-> Access your 1Password item within tmux!
+> Access your 1Password login items within tmux!
 
 ![](media/screenshot.gif)
 
