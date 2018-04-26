@@ -11,6 +11,7 @@ source "./spinner.sh"
 # ---------------------------------------------
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
+declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 
 declare spinner_pid=""
 
@@ -31,8 +32,11 @@ spinner_stop() {
 # ---------------------------------------------
 
 op_login() {
-  unset OP_SESSION_my
-  eval "$(op signin my)"
+  op signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
+}
+
+op_get_session() {
+  cat "$TMP_TOKEN_FILE" 2> /dev/null
 }
 
 get_op_items() {
@@ -42,7 +46,7 @@ get_op_items() {
     | join(\",\")) \
     | .[]"
 
-  op list items 2> /dev/null | jq "$JQ_FILTER" --raw-output
+  op list items --session="$(op_get_session)" 2> /dev/null | jq "$JQ_FILTER" --raw-output
 }
 
 get_op_item_password() {
@@ -51,14 +55,12 @@ get_op_item_password() {
     | select (.designation == \"password\") \
     | .value"
 
-  op get item "$ITEM_UUID" | jq "$JQ_FILTER" --raw-output
+  op get item "$ITEM_UUID" --session="$(op_get_session)" | jq "$JQ_FILTER" --raw-output
 }
 
 # ---------------------------------------------
 
 main() {
-  export OP_SESSION_my="$(cat "$TMP_TOKEN_FILE" 2> /dev/null)"
-
   local -r ACTIVE_PANE="$1"
 
   local items
@@ -74,12 +76,10 @@ main() {
     # Need to login
     op_login
 
-    if [[ -z "$OP_SESSION_my" ]]; then
-      tmux display-message "1Password login failed!"
+    if [[ -z "$(op_get_session)" ]]; then
+      tmux display-message "1password-tmux: 1Password CLI signin has failed"
       return 0
     fi
-
-    echo "$OP_SESSION_my" > "$TMP_TOKEN_FILE"
 
     items="$(get_op_items)"
   fi

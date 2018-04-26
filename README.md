@@ -4,10 +4,8 @@
 
 ![](media/screenshot.gif)
 
-This plugin allows you to access you 1Password items within tmux, using 1Password's CLI.
-
-Currently, this this plugin works for personal 1Password accounts (accounts that available on the
-    `my.1password.com` domain).
+This plugin allows you to access you 1Password items within tmux, using 1Password's CLI. It works
+for personal 1Password accounts, as well as teams accounts.
 
 ## Requirements
 
@@ -61,8 +59,11 @@ First, sign in with 1Password CLI by running the following in your terminal (you
 this *once*):
 
 ```console
-$ op signin my <emailaddress> <secretkey>
+$ op signin <signinaddress> <emailaddress> <secretkey>
 ```
+
+For 1Password personal accounts, `<signinaddress>` should be `my.1password.com`. If you're using a
+team account, configure the [`@1password-signin-subdomain`](#setting-the-signin-subdomain) option.
 
 From now on, initiate the plugin by using the keybind (`prefix + u` by default). A new pane will be
 opened in the bottom, listing the appropriate login items. Press `<Enter>` to choose a login item,
@@ -88,6 +89,16 @@ environment afterwards.
 ```
 set -g @1password-key 'x'
 ```
+
+Default: `u`
+
+#### Setting the signin subdomain
+
+```
+set -g @1password-subdomain 'acme'
+```
+
+Default: `my`
 
 ## Prior art
 
