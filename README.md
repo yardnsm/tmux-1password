@@ -63,7 +63,7 @@ $ op signin <signinaddress> <emailaddress> <secretkey>
 ```
 
 For 1Password personal accounts, `<signinaddress>` should be `my.1password.com`. If you're using a
-team account, configure the [`@1password-signin-subdomain`](#setting-the-signin-subdomain) option.
+team account, configure the [`@1password-subdomain`](#setting-the-signin-subdomain) option.
 
 From now on, initiate the plugin by using the keybind (`prefix + u` by default). A new pane will be
 opened in the bottom, listing the appropriate login items. Press `<Enter>` to choose a login item,
