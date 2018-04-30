@@ -90,7 +90,7 @@ environment afterwards.
 set -g @1password-key 'x'
 ```
 
-Default: `u`
+Default: `'u'`
 
 #### Setting the signin subdomain
 
@@ -98,7 +98,15 @@ Default: `u`
 set -g @1password-subdomain 'acme'
 ```
 
-Default: `my`
+Default: `'my'`
+
+#### Setting the default vault
+
+```
+set -g @1password-vault 'work'
+```
+
+Default: `''` (all vaults)
 
 ## Prior art
 

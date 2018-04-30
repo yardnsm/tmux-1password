@@ -11,7 +11,9 @@ source "./spinner.sh"
 # ---------------------------------------------
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
+
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
+declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 
 declare spinner_pid=""
 
@@ -46,7 +48,7 @@ get_op_items() {
     | join(\",\")) \
     | .[]"
 
-  op list items --session="$(op_get_session)" 2> /dev/null | jq "$JQ_FILTER" --raw-output
+  op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null | jq "$JQ_FILTER" --raw-output
 }
 
 get_op_item_password() {
