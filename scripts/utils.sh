@@ -12,7 +12,11 @@ get_tmux_option() {
   fi
 }
 
-cmd_exists() {
+display_message() {
+  tmux display-message "tmux-1password: $1"
+}
+
+is_cmd_exists() {
   command -v "$1" &> /dev/null
   return $?
 }

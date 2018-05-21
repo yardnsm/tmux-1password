@@ -35,6 +35,7 @@ spinner_stop() {
 
 op_login() {
   op signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
+  tput cl
 }
 
 op_get_session() {
@@ -48,7 +49,8 @@ get_op_items() {
     | join(\",\")) \
     | .[]"
 
-  op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null | jq "$JQ_FILTER" --raw-output
+  op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
+    | jq "$JQ_FILTER" --raw-output
 }
 
 get_op_item_password() {
@@ -57,7 +59,8 @@ get_op_item_password() {
     | select (.designation == \"password\") \
     | .value"
 
-  op get item "$ITEM_UUID" --session="$(op_get_session)" | jq "$JQ_FILTER" --raw-output
+  op get item "$ITEM_UUID" --session="$(op_get_session)" \
+    | jq "$JQ_FILTER" --raw-output
 }
 
 # ---------------------------------------------
@@ -75,15 +78,18 @@ main() {
   spinner_stop
 
   if [[ -z "$items" ]]; then
-    # Need to login
+
+    # Needs to login
     op_login
 
     if [[ -z "$(op_get_session)" ]]; then
-      tmux display-message "1password-tmux: 1Password CLI signin has failed"
+      display_message "1Password CLI signin has failed"
       return 0
     fi
 
+    spinner_start "Fetching items"
     items="$(get_op_items)"
+    spinner_stop
   fi
 
   selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"

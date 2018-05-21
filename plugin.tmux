@@ -21,8 +21,8 @@ declare -a REQUIRED_COMMANDS=(
 
 main() {
   for cmd in "${REQUIRED_COMMANDS[@]}"; do
-    if ! cmd_exists "$cmd"; then
-      tmux display-message "Failed to load tmux-1password: command '$cmd' not found"
+    if ! is_cmd_exists "$cmd"; then
+      display_message "command '$cmd' not found"
       return 1
     fi
   done
