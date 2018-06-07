@@ -1,5 +1,7 @@
 # tmux-1password
 
+[![Build Status](https://travis-ci.org/yardnsm/tmux-1password.svg?branch=master)](https://travis-ci.org/yardnsm/tmux-1password)
+
 > Access your 1Password login items within tmux!
 
 ![](media/screenshot.gif)
