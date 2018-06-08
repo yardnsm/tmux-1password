@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# ---------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Taken from:
 # https://github.com/yardnsm/dotfiles/blob/master/_setup/utils/spinner.sh

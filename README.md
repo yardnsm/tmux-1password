@@ -80,7 +80,6 @@ In order to show only relevant login items and to maintain compatibility with
 [sudolikeaboss](https://github.com/ravenac95/sudolikeaboss), its required to set the value of the
 `website` field for each login item with the value of `sudolikeaboss://local`.
 
-
 ## Configuration
 
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
@@ -109,6 +108,18 @@ set -g @1password-vault 'work'
 ```
 
 Default: `''` (all vaults)
+
+#### Copy the password to clipboard
+
+By default, the plugin will use `send-keys` to send the selected password to the targeted pane. By
+setting the following, the password will be copied to the system's clipboard. which will be cleared
+after 30 seconds.
+
+```
+set -g @1password-copy-to-clipboard 'on'
+```
+
+Default: `'off'`
 
 ## Prior art
 

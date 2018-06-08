@@ -20,3 +20,25 @@ is_cmd_exists() {
   command -v "$1" &> /dev/null
   return $?
 }
+
+copy_to_clipboard() {
+  if [[ "$(uname)" == "Darwin" ]] && is_cmd_exists "pbcopy"; then
+    echo -n "$1" | pbcopy
+  elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "xclip"; then
+    echo -n "$1" | xclip -i
+  else
+    return 1
+  fi
+}
+
+clear_clipboard() {
+  local -r SEC="$1"
+
+  if [[ "$(uname)" == "Darwin" ]] && is_cmd_exists "pbcopy"; then
+    tmux run-shell -b "sleep $SEC && echo '' | pbcopy"
+  elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "xclip"; then
+    tmux run-shell -b "sleep $SEC && echo '' | xclip -i"
+  else
+    return 1
+  fi
+}

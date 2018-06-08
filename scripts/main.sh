@@ -3,21 +3,22 @@
 cd "$(dirname "${BASH_SOURCE[0]}")" \
   || exit 1
 
-# ---------------------------------------------
+# ------------------------------------------------------------------------------
 
 source "./utils.sh"
 source "./spinner.sh"
 
-# ---------------------------------------------
+# ------------------------------------------------------------------------------
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
 
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
+declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
 
 declare spinner_pid=""
 
-# ---------------------------------------------
+# ------------------------------------------------------------------------------
 
 spinner_start() {
   tput civis
@@ -31,7 +32,7 @@ spinner_stop() {
   spinner_pid=""
 }
 
-# ---------------------------------------------
+# ------------------------------------------------------------------------------
 
 op_login() {
   op signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
@@ -63,7 +64,7 @@ get_op_item_password() {
     | jq "$JQ_FILTER" --raw-output
 }
 
-# ---------------------------------------------
+# ------------------------------------------------------------------------------
 
 main() {
   local -r ACTIVE_PANE="$1"
@@ -101,7 +102,18 @@ main() {
     selected_item_password="$(get_op_item_password "$selected_item_uuid")"
     spinner_stop
 
-    tmux send-keys -t "$ACTIVE_PANE" "$selected_item_password"
+    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+
+      # Copy password to clipboard
+      copy_to_clipboard "$selected_item_password"
+
+      # Clear clipboard
+      clear_clipboard 30
+    else
+
+      # Use `send-keys`
+      tmux send-keys -t "$ACTIVE_PANE" "$selected_item_password"
+    fi
   fi
 }
 
