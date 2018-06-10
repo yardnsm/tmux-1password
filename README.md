@@ -112,7 +112,7 @@ Default: `''` (all vaults)
 #### Copy the password to clipboard
 
 By default, the plugin will use `send-keys` to send the selected password to the targeted pane. By
-setting the following, the password will be copied to the system's clipboard. which will be cleared
+setting the following, the password will be copied to the system's clipboard, which will be cleared
 after 30 seconds.
 
 ```
