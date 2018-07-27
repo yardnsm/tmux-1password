@@ -44,11 +44,27 @@ op_get_session() {
 }
 
 get_op_items() {
-  local -r JQ_FILTER=".[] \
-    | [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?] \
-    | map([ .overview.title, .uuid ] \
-    | join(\",\")) \
-    | .[]"
+
+  # The structure (we need) looks like the following:
+  # [
+  #   {
+  #     "uuid": "some-long-uuid",
+  #     "overview": {
+  #       "URLs": [
+  #         { "u": "sudolikeaboss://local" }
+  #       ],
+  #       "title": "Some item"
+  #     }
+  #   }
+  # ]
+
+  local -r JQ_FILTER="
+    .[]
+    | [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
+    | map([ .overview.title, .uuid ]
+    | join(\",\"))
+    | .[]
+  "
 
   op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
     | jq "$JQ_FILTER" --raw-output
@@ -56,9 +72,39 @@ get_op_items() {
 
 get_op_item_password() {
   local -r ITEM_UUID="$1"
-  local -r JQ_FILTER=".details.fields[] \
-    | select (.designation == \"password\") \
-    | .value"
+
+  # There are two different kind of items that
+  # we support: login items and passwords.
+  #
+  # * Login items:
+  #       {
+  #         "details": {
+  #           "fields": [
+  #             {
+  #               "designation": "password",
+  #               "value": "supersecret"
+  #             }
+  #           ]
+  #         }
+  #       }
+  #
+  # * Password:
+  #       {
+  #         "details": {
+  #           "password": "supersecret"
+  #         }
+  #       }
+
+  local -r JQ_FILTER="
+    .details
+    | if .password then
+        .password
+      else
+        .fields[]
+        | select (.designation == \"password\")
+        | .value
+      end
+    "
 
   op get item "$ITEM_UUID" --session="$(op_get_session)" \
     | jq "$JQ_FILTER" --raw-output
