@@ -36,7 +36,7 @@ spinner_stop() {
 
 op_login() {
   op signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
-  tput cl
+  tput clear
 }
 
 op_get_session() {
