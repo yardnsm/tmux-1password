@@ -12,7 +12,6 @@ source "./scripts/utils.sh"
 declare -r CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 declare -a REQUIRED_COMMANDS=(
-  'op'
   'jq'
   'fzf'
 )
