@@ -15,6 +15,7 @@ declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
+declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "op")"
 
 declare spinner_pid=""
 
@@ -34,16 +35,20 @@ spinner_stop() {
 
 # ------------------------------------------------------------------------------
 
-op_login() {
-  op signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
+manager() {
+    $OPT_MANAGER "$@"
+}
+
+login() {
+  manager signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
   tput clear
 }
 
-op_get_session() {
+get_session() {
   cat "$TMP_TOKEN_FILE" 2> /dev/null
 }
 
-get_op_items() {
+get_items() {
 
   # The structure (we need) looks like the following:
   # [
@@ -66,11 +71,11 @@ get_op_items() {
     | .[]
   "
 
-  op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
+  manager list items --vault="$OPT_VAULT" --session="$(get_session)" 2> /dev/null \
     | jq "$JQ_FILTER" --raw-output
 }
 
-get_op_item_password() {
+get_item_password() {
   local -r ITEM_UUID="$1"
 
   # There are two different kind of items that
@@ -106,7 +111,7 @@ get_op_item_password() {
       end
     "
 
-  op get item "$ITEM_UUID" --session="$(op_get_session)" \
+  manager get item "$ITEM_UUID" --session="$(get_session)" \
     | jq "$JQ_FILTER" --raw-output
 }
 
@@ -121,21 +126,21 @@ main() {
   local selected_item_password
 
   spinner_start "Fetching items"
-  items="$(get_op_items)"
+  items="$(get_items)"
   spinner_stop
 
   if [[ -z "$items" ]]; then
 
     # Needs to login
-    op_login
+    login
 
-    if [[ -z "$(op_get_session)" ]]; then
+    if [[ -z "$(get_session)" ]]; then
       display_message "1Password CLI signin has failed"
       return 0
     fi
 
     spinner_start "Fetching items"
-    items="$(get_op_items)"
+    items="$(get_items)"
     spinner_stop
   fi
 
@@ -145,7 +150,7 @@ main() {
     selected_item_uuid="$(echo "$items" | grep "$selected_item_name" | awk -F ',' '{ print $2 }')"
 
     spinner_start "Fetching password"
-    selected_item_password="$(get_op_item_password "$selected_item_uuid")"
+    selected_item_password="$(get_item_password "$selected_item_uuid")"
     spinner_stop
 
     if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
