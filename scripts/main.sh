@@ -12,12 +12,15 @@ source "./spinner.sh"
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
 
+declare -r OPT_LPASS_USER="$(get_tmux_option "@lastpass-username" "unset")"
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
-declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "op")"
+declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "on")"
 
 declare spinner_pid=""
+
+source ../password_manager_configs.d/$OPT_MANAGER.sh
 
 # ------------------------------------------------------------------------------
 
@@ -36,11 +39,29 @@ spinner_stop() {
 # ------------------------------------------------------------------------------
 
 manager() {
-    $OPT_MANAGER "$@"
+  pwman=$OPT_MANAGER
+  cmd=$1
+  shift # Remove 1st arg (the cmd) from list
+  case $cmd in
+    login)
+      $pwman $logincmd "$otherOptsLogin" "$@"
+      ;;
+    list)
+      $pwman $listcmd "$otherOptsList" "$@"
+      ;;
+    get)
+      $pwman $getcmd "$otherOptsGet" "$@"
+      ;;
+    *)
+      echo Unknown command: $cmd
+      sleep 5
+      exit
+      ;;
+  esac
 }
 
 login() {
-  manager signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
+  manager login > "$TMP_TOKEN_FILE"
   tput clear
 }
 
@@ -49,70 +70,14 @@ get_session() {
 }
 
 get_items() {
-
-  # The structure (we need) looks like the following:
-  # [
-  #   {
-  #     "uuid": "some-long-uuid",
-  #     "overview": {
-  #       "URLs": [
-  #         { "u": "sudolikeaboss://local" }
-  #       ],
-  #       "title": "Some item"
-  #     }
-  #   }
-  # ]
-
-  local -r JQ_FILTER="
-    .[]
-    | [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
-    | map([ .overview.title, .uuid ]
-    | join(\",\"))
-    | .[]
-  "
-
-  manager list items --vault="$OPT_VAULT" --session="$(get_session)" 2> /dev/null \
-    | jq "$JQ_FILTER" --raw-output
+  # manager list --vault="$OPT_VAULT" --session="$(get_session)" 2> /dev/null \
+  manager list filter_list
 }
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-
-  # There are two different kind of items that
-  # we support: login items and passwords.
-  #
-  # * Login items:
-  #       {
-  #         "details": {
-  #           "fields": [
-  #             {
-  #               "designation": "password",
-  #               "value": "supersecret"
-  #             }
-  #           ]
-  #         }
-  #       }
-  #
-  # * Password:
-  #       {
-  #         "details": {
-  #           "password": "supersecret"
-  #         }
-  #       }
-
-  local -r JQ_FILTER="
-    .details
-    | if .password then
-        .password
-      else
-        .fields[]
-        | select (.designation == \"password\")
-        | .value
-      end
-    "
-
-  manager get item "$ITEM_UUID" --session="$(get_session)" \
-    | jq "$JQ_FILTER" --raw-output
+  # manager list --vault="$OPT_VAULT" --session="$(get_session)" 2> /dev/null \
+  manager get "$ITEM_UUID" filter_get
 }
 
 # ------------------------------------------------------------------------------
@@ -133,6 +98,7 @@ main() {
 
     # Needs to login
     login
+    echo logged in
 
     if [[ -z "$(get_session)" ]]; then
       display_message "1Password CLI signin has failed"
@@ -169,3 +135,4 @@ main() {
 }
 
 main "$@"
+# vim:sw=2:ts=2
