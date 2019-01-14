@@ -3,6 +3,7 @@
 logincmd="login"
 if [ "$OPT_LPASS_USER" == "unset" ]; then
   echo "set @lastpass_username in tmux options"
+  sleep 5
   exit
 fi
 otherOptsLogin="$OPT_LPASS_USER"
@@ -14,21 +15,11 @@ otherOptsList=".*"
 getcmd="show"
 otherOptsGet="--json"
 
-filter_list(){
-  local -r input="$*"
-  local -r FILTER_URL="sudolikeaboss://local"
-  local -r JQ_FILTER="
-  .[]
-  | [select(.url == \"$FILTER_URL\")]
-  | map([ .name, .id ]
-  | join(\",\"))
-  | .[]
-  "
-  echo $input | jq "$JQ_FILTER" --raw-output
-}
-
-filter_get(){
-  local -r input="$*"
-  local -r JQ_FILTER=".[].password"
-  echo $input | jq "$JQ_FILTER" --raw-output
-}
+JQ_FILTER_LIST="
+.[]
+| [select(.url == \"$FILTER_URL\")]
+| map([ .name, .id ]
+| join(\",\"))
+| .[]
+"
+JQ_FILTER_GET=".[].password"

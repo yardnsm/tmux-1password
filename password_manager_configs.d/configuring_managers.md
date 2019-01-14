@@ -1,11 +1,18 @@
-Files in this directory needs to declare variables `logincmd`, `listcmd`, and `getcmd`.
+Files in this directory need to be named `[password manager cli command].sh` and should declare several variables:
 
-They also need to declare two functions:
+* `logincmd`
+* `listcmd`
+* `getcmd`
+* `JQ_FILTER_LIST`
+* `JQ_FILTER_GET`
 
-* `filter_list` that takes as a parameter the output of `listcmd`,
+`listcmd` and `getcmd` should return a .json.
+
+* `JQ_FILTER_LIST` is a string containing a JQ_FILTER that takes the output of `listcmd`,
 and returns "`name`,`uuid`", where:
 
     - `name` = a human-readable identifier
     - `uuid` = a unique identifier.
 
-* `filter_get` that takes the output of `getcmd` and returns the password only.
+* `JQ_FILTER_GET` that takes the output of `getcmd` and returns the password only.
+

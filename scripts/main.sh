@@ -21,6 +21,8 @@ declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
 
 declare spinner_pid=""
 
+FILTER_URL="sudolikeaboss://local"
+
 source ../password_manager_configs.d/$OPT_MANAGER.sh
 
 # ------------------------------------------------------------------------------
@@ -78,6 +80,11 @@ get_items() {
   fi
 }
 
+filter_list(){
+  local -r input="$*"
+  echo $input | jq "$JQ_FILTER_LIST" --raw-output
+}
+
 get_item_password() {
   local -r ITEM_UUID="$1"
   if [ "$OPT_DEBUG" == "true" ]; then
@@ -85,6 +92,11 @@ get_item_password() {
   else
     filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
   fi
+}
+
+filter_get(){
+  local -r input="$*"
+  echo $input | jq "$JQ_FILTER_GET" --raw-output
 }
 
 # ------------------------------------------------------------------------------
@@ -105,7 +117,6 @@ main() {
 
     # Needs to login
     login
-    echo logged in
 
     if [[ -z "$(get_session)" ]]; then
       display_message "1Password CLI signin has failed"

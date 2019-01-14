@@ -7,62 +7,54 @@ otherOptsList="--vault=\"$OPT_VAULT\" --session=\"$(get_session)\""
 getcmd="get item"
 otherOptsGet="--session=\"$(get_session)\""
 
-filter_list(){
-  input="$*"
-  # The structure to be filtered from `on show items` is this:
-  # [
-  #   {
-  #     "uuid": "some-long-uuid",
-  #     "overview": {
-  #       "URLs": [
-  #         { "u": "sudolikeaboss://local" }
-  #       ],
-  #       "title": "Some item"
-  #     }
-  #   }
-  # ]
-  local -r JQ_FILTER="
-  .[]
-  | [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
-  | map([ .overview.title, .uuid ]
-  | join(\",\"))
-  | .[]
-  "
-  echo $input | jq "$JQ_FILTER" --raw-output
-}
+# The structure to be filtered from `on show items` is this:
+# [
+#   {
+#     "uuid": "some-long-uuid",
+#     "overview": {
+#       "URLs": [
+#         { "u": "sudolikeaboss://local" }
+#       ],
+#       "title": "Some item"
+#     }
+#   }
+# ]
+JQ_FILTER_LIST="
+.[]
+| [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
+| map([ .overview.title, .uuid ]
+| join(\",\"))
+| .[]
+"
 
-filter_get(){
-  input="$*"
-  # There are two different kind of items that
-  # we support: login items and passwords.
-  #
-  # * Login items:
-  #       {
-  #         "details": {
-  #           "fields": [
-  #             {
-  #               "designation": "password",
-  #               "value": "supersecret"
-  #             }
-  #           ]
-  #         }
-  #       }
-  #
-  # * Password:
-  #       {
-  #         "details": {
-  #           "password": "supersecret"
-  #         }
-  #       }
-  local -r JQ_FILTER="
-    .details
-    | if .password then
-    .password
+# There are two different kind of items that
+# we support: login items and passwords.
+#
+# * Login items:
+#       {
+#         "details": {
+#           "fields": [
+#             {
+#               "designation": "password",
+#               "value": "supersecret"
+#             }
+#           ]
+#         }
+#       }
+#
+# * Password:
+#       {
+#         "details": {
+#           "password": "supersecret"
+#         }
+#       }
+JQ_FILTER_GET="
+.details
+| if .password then
+.password
   else
     .fields[]
     | select (.designation == \"password\")
     | .value
   end
 "
-  echo $input | jq "$JQ_FILTER" --raw-output
-}
