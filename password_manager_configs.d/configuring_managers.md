@@ -16,3 +16,6 @@ and returns "`name`,`uuid`", where:
 
 * `JQ_FILTER_GET` that takes the output of `getcmd` and returns the password only.
 
+Alternatively, if more custom filtering is required (eg to create a json output
+if the manager doesn't support it natively), set `USE_CUSTOM_FILTER`
+and declare your own `filter_list_custom` function here.

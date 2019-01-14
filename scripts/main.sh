@@ -81,8 +81,12 @@ get_items() {
 }
 
 filter_list(){
-  local -r input="$*"
-  echo $input | jq "$JQ_FILTER_LIST" --raw-output
+  if [ -n "$USE_CUSTOM_FILTER" ]; then
+    filter_list_custom "$@"
+  else
+    local -r input="$*"
+    echo $input | jq "$JQ_FILTER_LIST" --raw-output
+  fi
 }
 
 get_item_password() {
