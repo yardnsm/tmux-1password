@@ -17,6 +17,7 @@ declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
 declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "on")"
+declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
 
 declare spinner_pid=""
 
@@ -70,14 +71,20 @@ get_session() {
 }
 
 get_items() {
+  if [ "$OPT_DEBUG" == "true" ]; then
+    filter_list "$(manager list)"
+  else
     filter_list "$(manager list 2> /dev/null)"
-    # filter_list "$(manager list)"
+  fi
 }
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
-  # filter_get "$(manager get $ITEM_UUID)"
+  if [ "$OPT_DEBUG" == "true" ]; then
+    filter_get "$(manager get $ITEM_UUID)"
+  else
+    filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
+  fi
 }
 
 # ------------------------------------------------------------------------------
