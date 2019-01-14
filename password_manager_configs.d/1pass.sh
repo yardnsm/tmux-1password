@@ -45,14 +45,16 @@ convertToJson(){
   # done
 }
 
-# 1pass can only do 2 things: list names, and return a password. Tricky to convert to json...
+# 1pass can only do 2 things: list names, and return a password. No json.
 filter_list_custom(){
   local -r input="$*"
-  convertToJson "$input"
-  echo $input | jq "$JQ_FILTER_LIST" --raw-output
+  while read -r line; do
+    output="${output}${line},${line}\n"
+  done <<< "$input"
+  echo $output
 }
 
 filter_get_custom(){
   local -r input="$*"
-  echo $input | jq "$JQ_FILTER_GET" --raw-output
+  echo 1pass -p $input
 }
