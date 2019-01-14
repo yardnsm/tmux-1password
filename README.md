@@ -2,18 +2,22 @@
 
 [![Build Status](https://travis-ci.org/yardnsm/tmux-1password.svg?branch=master)](https://travis-ci.org/yardnsm/tmux-1password)
 
-> Access your 1Password login items within tmux!
+> Access your 1Password and lastpass login items within tmux!
 
 ![](.github/screenshot.gif)
 
-This plugin allows you to access you 1Password items within tmux, using 1Password's CLI. It works
-for personal 1Password accounts, as well as teams accounts.
+This plugin allows you to access you password items within tmux, using a password manager's CLI.
+
+Supported managers:
+
+* Personal 1Password accounts, as well as teams accounts
+* lastpass-cli
 
 ## Requirements
 
 This plugin relies on the following:
 
-- [1Password CLI](https://support.1password.com/command-line-getting-started/)
+- [1Password CLI](https://support.1password.com/command-line-getting-started/) (or other cli)
 - [fzf](https://github.com/junegunn/fzf)
 - [jq](https://stedolan.github.io/jq/)
 
@@ -57,8 +61,8 @@ In any tmux mode:
 
 ## Usage
 
-First, sign in with 1Password CLI by running the following in your terminal (you only need to do
-this *once*):
+First, sign in with the CLI by running the following in your terminal (you only need to do
+this *once*)(1Password example provided):
 
 ```console
 $ op signin <signinaddress> <emailaddress> <secretkey>
@@ -85,6 +89,20 @@ In order to show only relevant login items and to maintain compatibility with
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
 environment afterwards.
 
+#### Set Lastpass username (required when logging in again)
+
+```
+set -g @lastpass-username 'x'
+```
+
+#### Changing the default manager for this plugin
+
+This should be the command typed at the prompt.
+
+```
+set -g @password-manager-cmd 'op'
+```
+
 #### Changing the default key-binding for this plugin
 
 ```
@@ -93,7 +111,7 @@ set -g @1password-key 'x'
 
 Default: `'u'`
 
-#### Setting the signin subdomain
+#### Setting the 1Password signin subdomain
 
 ```
 set -g @1password-subdomain 'acme'
@@ -101,7 +119,7 @@ set -g @1password-subdomain 'acme'
 
 Default: `'my'`
 
-#### Setting the default vault
+#### Setting the default 1Password vault
 
 ```
 set -g @1password-vault 'work'
@@ -128,6 +146,10 @@ Also see:
 - [sudolikeaboss](https://github.com/ravenac95/sudolikeaboss)
 
 ---
+
+## Adding new managers
+
+Read password_manager_configs.d/configuring_managers.md
 
 ## License
 
