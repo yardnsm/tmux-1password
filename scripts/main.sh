@@ -70,14 +70,14 @@ get_session() {
 }
 
 get_items() {
-  # manager list --vault="$OPT_VAULT" --session="$(get_session)" 2> /dev/null \
-  manager list filter_list
+    filter_list "$(manager list 2> /dev/null)"
+    # filter_list "$(manager list)"
 }
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  # manager list --vault="$OPT_VAULT" --session="$(get_session)" 2> /dev/null \
-  manager get "$ITEM_UUID" filter_get
+  filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
+  # filter_get "$(manager get $ITEM_UUID)"
 }
 
 # ------------------------------------------------------------------------------

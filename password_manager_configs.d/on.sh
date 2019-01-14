@@ -8,6 +8,7 @@ getcmd="get item"
 otherOptsGet="--session=\"$(get_session)\""
 
 filter_list(){
+  input="$*"
   # The structure to be filtered from `on show items` is this:
   # [
   #   {
@@ -20,7 +21,6 @@ filter_list(){
   #     }
   #   }
   # ]
-  read input
   local -r JQ_FILTER="
   .[]
   | [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
@@ -32,6 +32,7 @@ filter_list(){
 }
 
 filter_get(){
+  input="$*"
   # There are two different kind of items that
   # we support: login items and passwords.
   #
@@ -53,7 +54,6 @@ filter_get(){
   #           "password": "supersecret"
   #         }
   #       }
-  read input
   local -r JQ_FILTER="
     .details
     | if .password then
@@ -64,5 +64,5 @@ filter_get(){
     | .value
   end
 "
-echo $input | jq "$JQ_FILTER" --raw-output
+  echo $input | jq "$JQ_FILTER" --raw-output
 }
