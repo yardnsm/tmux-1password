@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/yardnsm/tmux-1password.svg?branch=master)](https://travis-ci.org/yardnsm/tmux-1password)
 
-> Access your 1Password and lastpass login items within tmux!
+> Access your password manager login items within tmux!
 
 ![](.github/screenshot.gif)
 
@@ -12,6 +12,12 @@ Supported managers:
 
 * Personal 1Password accounts, as well as teams accounts
 * lastpass-cli
+
+In the works:
+
+* 1pass (`on` wrapper)
+
+Additional managers should be easy to integrate, especially if they can output `json` format.
 
 ## Requirements
 
@@ -78,11 +84,13 @@ and its password will automatically be filled.
 You may be required to perform a re-login (directly in the opened pane) since the 1Password CLI's
 sessions expires automatically after 30 minutes of inactivity.
 
-### Configuring login items in 1Password
+If your manager logs you out (or some other error means no login items can be found) you will be asked to log in again.
+
+### Showing login items from manager
 
 In order to show only relevant login items and to maintain compatibility with
 [sudolikeaboss](https://github.com/ravenac95/sudolikeaboss), its required to set the value of the
-`website` field for each login item with the value of `sudolikeaboss://local`.
+`website` or `url` field for each login item with the value of `sudolikeaboss://local`.
 
 ## Configuration
 
