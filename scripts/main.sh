@@ -74,7 +74,7 @@ get_session() {
 
 get_items() {
   if [ "$OPT_DEBUG" == "true" ]; then
-    filter_list "$(manager list)"
+    filter_list "$(manager list)" > /dev/stderr
   else
     filter_list "$(manager list 2> /dev/null)"
   fi
@@ -92,7 +92,7 @@ filter_list(){
 get_item_password() {
   local -r ITEM_UUID="$1"
   if [ "$OPT_DEBUG" == "true" ]; then
-    filter_get "$(manager get $ITEM_UUID)"
+    filter_get "$(manager get $ITEM_UUID)" > /dev/stderr
   else
     filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
   fi
@@ -123,11 +123,17 @@ main() {
 
   if [[ -z "$items" ]]; then
 
+    if [ "$OPT_DEBUG" == "true" ]; then
+      # Give time to read any messages
+      sleep, 10
+    fi
     # Needs to login
     login
 
     if [[ -z "$(get_session)" ]]; then
       display_message "1Password CLI signin has failed"
+      # Give time to read any messages
+      sleep, 10
       return 0
     fi
 
