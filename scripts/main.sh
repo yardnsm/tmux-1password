@@ -18,13 +18,24 @@ declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
 declare -r OPT_CLEAR_CLIPBOARD_TIME="$(get_tmux_option "@1password-clipboard-duration" "30")"
 declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "on")"
-declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
+declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "true")"
 
 declare spinner_pid=""
 
-FILTER_URL="sudolikeaboss://local"
+# FILTER_URL="sudolikeaboss://local"
+FILTER_URL="https://github.com"
 
 source ../password_manager_configs.d/$OPT_MANAGER.sh
+
+# Note that using this variable requires a command to be prefaced with "eval"
+# and the variable to be used unquoted, eg `eval echo test $DEBUG_REDIRECT`.
+if [ "$OPT_DEBUG" == "true" ]; then
+  # Tee output to stderr, because otherwise gets captured and hidden.
+  DEBUG_REDIRECT=" | tee /dev/stderr"
+else
+  # Supress errors
+  DEBUG_REDIRECT=" 2> /dev/null"
+fi
 
 # ------------------------------------------------------------------------------
 
@@ -40,6 +51,11 @@ spinner_stop() {
   spinner_pid=""
 }
 
+pause(){
+  # give time to read any messages
+  read -rsp $'Press any key to continue...\n' -n1 key
+}
+
 # ------------------------------------------------------------------------------
 
 manager() {
@@ -48,17 +64,17 @@ manager() {
   shift # Remove 1st arg (the cmd) from list
   case $cmd in
     login)
-      $pwman $logincmd "$otherOptsLogin" "$@"
+      eval $pwman $logincmd "$otherOptsLogin" "$@" $DEBUG_REDIRECT
       ;;
     list)
-      $pwman $listcmd "$otherOptsList" "$@"
+      eval $pwman $listcmd "$otherOptsList" "$@" $DEBUG_REDIRECT
       ;;
     get)
-      $pwman $getcmd "$otherOptsGet" "$@"
+      eval $pwman $getcmd "$otherOptsGet" "$@" $DEBUG_REDIRECT
       ;;
     *)
       echo Unknown command: $cmd
-      sleep 5
+      pause
       exit
       ;;
   esac
@@ -66,7 +82,10 @@ manager() {
 
 login() {
   manager login > "$TMP_TOKEN_FILE"
-  tput clear
+
+  if [ "$OPT_DEBUG" != "true" ]; then
+    tput clear
+  fi
 }
 
 get_session() {
@@ -74,37 +93,30 @@ get_session() {
 }
 
 get_items() {
-  if [ "$OPT_DEBUG" == "true" ]; then
-    filter_list "$(manager list)" > /dev/stderr
-  else
-    filter_list "$(manager list 2> /dev/null)"
-  fi
+  eval filter_list "$(manager list)" $DEBUG_REDIRECT
 }
 
 filter_list(){
   if [ -n "$USE_CUSTOM_FILTERS" ]; then
-    filter_list_custom "$@"
+    eval filter_list_custom "$@" $DEBUG_REDIRECT
   else
     local -r input="$*"
-    echo $input | jq "$JQ_FILTER_LIST" --raw-output
+    eval echo $input | jq "$JQ_FILTER_LIST" --raw-output $DEBUG_REDIRECT
+    eval jq -n --argjson data "$input" "$JQ_FILTER_LIST" --raw-output $DEBUG_REDIRECT
   fi
 }
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  if [ "$OPT_DEBUG" == "true" ]; then
-    filter_get "$(manager get $ITEM_UUID)" > /dev/stderr
-  else
-    filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
-  fi
+  eval filter_get "$(manager get $ITEM_UUID)" $DEBUG_REDIRECT
 }
 
 filter_get(){
   if [ -n "$USE_CUSTOM_FILTERS" ]; then
-    filter_get_custom "$@"
+    eval filter_get_custom "$@" $DEBUG_REDIRECT
   else
     local -r input="$*"
-    echo $input | jq "$JQ_FILTER_GET" --raw-output
+    eval jq -n --argjson data "$input" "$JQ_FILTER_GET" --raw-output $DEBUG_REDIRECT
   fi
 }
 
@@ -122,19 +134,20 @@ main() {
   items="$(get_items)"
   spinner_stop
 
-  if [[ -z "$items" ]]; then
+  if [ -z "$items" ]; then
 
     if [ "$OPT_DEBUG" == "true" ]; then
+      echo "No matching items found. Will try to log in again."
       # Give time to read any messages
-      sleep, 10
+      pause
     fi
     # Needs to login
     login
 
-    if [[ -z "$(get_session)" ]]; then
+    if [ -z "$(get_session)" ]; then
       display_message "1Password CLI signin has failed"
       # Give time to read any messages
-      sleep, 10
+      pause
       return 0
     fi
 
@@ -145,14 +158,14 @@ main() {
 
   selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
 
-  if [[ -n "$selected_item_name" ]]; then
+  if [ -n "$selected_item_name" ]; then
     selected_item_uuid="$(echo "$items" | grep "$selected_item_name" | awk -F ',' '{ print $2 }')"
 
     spinner_start "Fetching password"
     selected_item_password="$(get_item_password "$selected_item_uuid")"
     spinner_stop
 
-    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+    if [ "$OPT_COPY_TO_CLIPBOARD" == "on" ]; then
 
       # Copy password to clipboard
       copy_to_clipboard "$selected_item_password"
