@@ -16,6 +16,7 @@ declare -r OPT_LPASS_USER="$(get_tmux_option "@lastpass-username" "unset")"
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
+declare -r OPT_CLEAR_CLIPBOARD_TIME="$(get_tmux_option "@1password-clipboard-duration" "30")"
 declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "on")"
 declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
 
@@ -157,7 +158,7 @@ main() {
       copy_to_clipboard "$selected_item_password"
 
       # Clear clipboard
-      clear_clipboard 30
+      clear_clipboard ${OPT_CLEAR_CLIPBOARD_TIME}
     else
 
       # Use `send-keys`

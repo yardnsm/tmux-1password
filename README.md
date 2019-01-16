@@ -139,10 +139,11 @@ Default: `''` (all vaults)
 
 By default, the plugin will use `send-keys` to send the selected password to the targeted pane. By
 setting the following, the password will be copied to the system's clipboard, which will be cleared
-after 30 seconds.
+after `1password-clipboard-duration` seconds (default 30).
 
 ```
 set -g @1password-copy-to-clipboard 'on'
+set -g @1password-clipboard-duration '30'
 ```
 
 Default: `'off'`
