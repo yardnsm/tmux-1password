@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")" \
-  || exit 1
+SCRIPTDIR="$(eval echo $(cd $( dirname "${BASH_SOURCE[0]}" ) && pwd))"
+cd "$SCRIPTDIR" || exit 1
 
 # ------------------------------------------------------------------------------
 
@@ -24,11 +24,14 @@ declare spinner_pid=""
 
 # FILTER_URL="sudolikeaboss://local"
 FILTER_URL="https://github.com"
-LOGFILE=".tmux-passwords.log"
+LOGFILE="$SCRIPTDIR/../tmux-passwords.log"
+INCLUDE_PASSWORDS_IN_LOG=false
 
 source ../password_manager_configs.d/$OPT_MANAGER.sh
 
-if [ "$OPT_DEBUG" != "true" ]; then
+if [ "$OPT_DEBUG" == "true" ]; then
+  echo "Debug information will be printed to $LOGFILE"
+else
   # Supress errors by disabling stderr
   exec 3>&2-
   exec 2>/dev/null
@@ -91,8 +94,12 @@ get_session() {
 }
 
 get_items() {
-  echo INFO: All items found: > /dev/stderr # debug
-  filter_list "$(manager list | tee /dev/stderr)"
+  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    echo INFO: All items found: > /dev/stderr # debug
+    filter_list "$(manager list | tee /dev/stderr)"
+  else
+    filter_list "$(manager list)"
+  fi
 }
 
 filter_list(){
@@ -106,8 +113,12 @@ filter_list(){
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  echo INFO: Password: > /dev/stderr # debug
-  filter_get "$(manager get $ITEM_UUID)" | tee /dev/stderr
+  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    echo DEBUG: `manager get` output: > /dev/stderr # debug
+    filter_get "$(manager get $ITEM_UUID)" | tee /dev/stderr
+  else
+    filter_get "$(manager get $ITEM_UUID)"
+  fi
 }
 
 filter_get(){
@@ -132,7 +143,9 @@ main() {
   spinner_start "Fetching items"
   items="$(get_items)"
   spinner_stop
-  echo INFO: Matching items: $items > /dev/stderr # debug
+  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    echo INFO: Matching items: $items > /dev/stderr # debug
+  fi
 
   if [ -z "$items" ]; then
 
@@ -165,7 +178,9 @@ main() {
     spinner_start "Fetching password"
     selected_item_password="$(get_item_password "$selected_item_uuid")"
     spinner_stop
-    echo password: $selected_item_password > /dev/stderr # debug
+    if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+      echo password: $selected_item_password > /dev/stderr # debug
+    fi
 
     if [ "$OPT_COPY_TO_CLIPBOARD" == "on" ]; then
 
@@ -185,7 +200,7 @@ main() {
 # main "$@" 3> >(tee -a "$LOGFILE")
 # main "$@" 3> >(tee -a "$LOGFILE")
 # main "$@" | tee -a "$LOGFILE"
-main "$@"
+main "$@" 2> $LOGFILE
 if [ "$OPT_DEBUG" != "true" ]; then
   # Restore stderr
   exec 2>&3
