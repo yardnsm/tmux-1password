@@ -12,7 +12,6 @@ source "./spinner.sh"
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
 
-declare -r OPT_LPASS_USER="$(get_tmux_option "@lastpass-username" "unset")"
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
