@@ -18,19 +18,18 @@ declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
 declare -r OPT_CLEAR_CLIPBOARD_TIME="$(get_tmux_option "@1password-clipboard-duration" "30")"
 declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "on")"
-declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "true")"
+declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
 
 declare spinner_pid=""
 
 # FILTER_URL="sudolikeaboss://local"
 FILTER_URL="https://github.com"
+LOGFILE=".tmux-passwords.log"
 
 source ../password_manager_configs.d/$OPT_MANAGER.sh
 
-# Note that using this variable requires a command to be prefaced with "eval"
-# and the variable to be used unquoted, eg `eval echo test $DEBUG_REDIRECT`.
 if [ "$OPT_DEBUG" == "true" ]; then
-  # Tee output to stderr, because otherwise gets captured and hidden.
+  # tee output to stderr, because otherwise gets captured and hidden.
   DEBUG_REDIRECT=" | tee /dev/stderr"
 else
   # Supress errors
@@ -62,23 +61,24 @@ manager() {
   pwman=$OPT_MANAGER
   cmd=$1
   shift # Remove 1st arg (the cmd) from list
+  # Tee commands to send output to stderr as well as stdin.
+  echo -n INFO: $cmd output:: > /dev/stderr
   case $cmd in
     login)
-      eval $pwman $logincmd "$otherOptsLogin" "$@" $DEBUG_REDIRECT
+      $pwman $logincmd "$otherOptsLogin" "$@" | tee /dev/stderr
       ;;
     list)
-      eval $pwman $listcmd "$otherOptsList" "$@" $DEBUG_REDIRECT
+      $pwman $listcmd "$otherOptsList" "$@" | tee /dev/stderr
       ;;
     get)
-      eval $pwman $getcmd "$otherOptsGet" "$@" $DEBUG_REDIRECT
+      $pwman $getcmd "$otherOptsGet" "$@" | tee /dev/stderr
       ;;
     *)
-      echo Unknown command: $cmd
-      pause
+      echo ERROR: Unknown command: $cmd > /dev/stderr
       exit
       ;;
   esac
-}
+} 2>> "$LOGFILE"
 
 login() {
   manager login > "$TMP_TOKEN_FILE"
@@ -93,30 +93,38 @@ get_session() {
 }
 
 get_items() {
-  eval filter_list "$(manager list)" $DEBUG_REDIRECT
+  if [ "$OPT_DEBUG" == "true" ]; then
+    echo INFO: All items found: 2> >(tee -a > "$LOGFILE") > /dev/stderr
+    filter_list "$(manager list  2> >(tee -a > "$LOGFILE"))"
+  else
+    filter_list "$(manager list 2> /dev/null)"
+  fi
 }
 
 filter_list(){
   if [ -n "$USE_CUSTOM_FILTERS" ]; then
-    eval filter_list_custom "$@" $DEBUG_REDIRECT
+    filter_list_custom "$@"
   else
     local -r input="$*"
-    eval echo $input | jq "$JQ_FILTER_LIST" --raw-output $DEBUG_REDIRECT
-    eval jq -n --argjson data "$input" "$JQ_FILTER_LIST" --raw-output $DEBUG_REDIRECT
+    echo $input | jq "$JQ_FILTER_LIST" --raw-output
   fi
 }
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  eval filter_get "$(manager get $ITEM_UUID)" $DEBUG_REDIRECT
+  if [ "$OPT_DEBUG" == "true" ]; then
+    filter_get "$(manager get $ITEM_UUID)" > /dev/stderr
+  else
+    filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
+  fi
 }
 
 filter_get(){
   if [ -n "$USE_CUSTOM_FILTERS" ]; then
-    eval filter_get_custom "$@" $DEBUG_REDIRECT
+    filter_get_custom "$@"
   else
     local -r input="$*"
-    eval jq -n --argjson data "$input" "$JQ_FILTER_GET" --raw-output $DEBUG_REDIRECT
+    echo $input | jq "$JQ_FILTER_GET" --raw-output
   fi
 }
 
@@ -133,6 +141,9 @@ main() {
   spinner_start "Fetching items"
   items="$(get_items)"
   spinner_stop
+  if [ "$OPT_DEBUG" == "true" ]; then
+    echo INFO: Matching items: $items | tee -a "$LOGFILE" >&2
+  fi
 
   if [ -z "$items" ]; then
 
@@ -180,5 +191,9 @@ main() {
   fi
 }
 
-main "$@"
+if [ "$OPT_DEBUG" == "true" ]; then
+  main "$@" 2> >(tee -a "$LOGFILE") >&2
+else
+  main "$@"
+fi
 # vim:sw=2:ts=2
