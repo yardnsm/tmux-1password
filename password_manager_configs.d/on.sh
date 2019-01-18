@@ -18,7 +18,7 @@ login(){
 }
 
 get_items() {
-  listcmd="list items --vault=\"$OPT_VAULT\" --session=\"$(get_session)\""
+  listcmd="list items --vault=\\"$OPT_VAULT\\" --session=\\"$(get_session)\\""
   echo INFO: All items found: > /dev/stderr # debug
   filter_list "$($listcmd | log)"
 }
@@ -50,13 +50,11 @@ filter_list(){
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  getcmd="get item --session=\"$(get_session)\""
+  getcmd=""
   if $INCLUDE_PASSWORDS_IN_LOG; then
     echo DEBUG: \`on get item\` output: > /dev/stderr # debug
-    filter_get "$($getcmd $ITEM_UUID)" | log
-  else
-    filter_get "$($getcmd $ITEM_UUID)"
   fi
+  filter_get "$(on get item --session=\"$(get_session)\" $ITEM_UUID)" | log true
 }
 
 

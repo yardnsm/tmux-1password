@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 OPT_LPASS_USER="$(get_tmux_option "@lastpass-username" "unset")"
-declare -r FILTER_URL="https://github.com"
 
 login(){
   if ! lpass status; then
@@ -27,11 +26,8 @@ get_items() {
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  getcmd="lpass show -p"
   if $INCLUDE_PASSWORDS_IN_LOG; then
-    echo DEBUG: \`$getcmd\` output: > /dev/stderr # debug
-    $getcmd $ITEM_UUID | log
-  else
-    $getcmd $ITEM_UUID
+    echo DEBUG: \`lpass show -p $ITEM_UUID\` output: > /dev/stderr # debug
   fi
+  $getcmd lpass show -p $ITEM_UUID | log true
 }

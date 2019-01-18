@@ -21,11 +21,6 @@ get_items() {
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  getcmd="1pass -p \"$ITEM_UUID\""
-  if $INCLUDE_PASSWORDS_IN_LOG; then
-    echo DEBUG: `1pass -p` output: > /dev/stderr # debug
-    $getcmd | log
-  else
-    $getcmd
-  fi
+  getcmd=""
+  $getcmd 1pass -p $ITEM_UUID | log true
 }

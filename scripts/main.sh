@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPTDIR="$(eval echo $(cd $( dirname "${BASH_SOURCE[0]}" ) && pwd))"
+SCRIPTDIR="$(eval echo "$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)")"
 cd "$SCRIPTDIR" || exit 1
 
 # ------------------------------------------------------------------------------
@@ -17,8 +17,6 @@ declare -r OPT_DEBUG="$(get_tmux_option "@passwords-debug" "false")"
 
 declare spinner_pid=""
 
-# FILTER_URL="https://github.com"
-
 LOGFILE="$SCRIPTDIR/../tmux-passwords.log"
 INCLUDE_PASSWORDS_IN_LOG=false
 
@@ -33,10 +31,15 @@ else
 fi
 
 log(){
-  read input
+  INPUT_CONTAINS_PASSWORDS=$1
+  read -r input
+  if $INPUT_CONTAINS_PASSWORDS && ! $INCLUDE_PASSWORDS_IN_LOG; then
+    echo $input
+    return
+  fi
   if $OPT_DEBUG; then
-    echo $input >> $LOGFILE
-    echo $input >&2
+    echo "$input" >> "$LOGFILE"
+    echo "$input" >&2
   fi
   echo $input
 }
@@ -80,7 +83,7 @@ main() {
   echo INFO: Matching items: $items > /dev/stderr # debug
 
   # Check if items contains non-whitespace characters.
-  if [[ $str =~ ^\ +$ ]]; then
+  if [[ $items =~ ^\ +$ ]]; then
     # Needs to login
 
       if $OPT_DEBUG; then
@@ -106,13 +109,13 @@ main() {
 
   if [ -n "$selected_item_name" ]; then
     selected_item_uuid="$(echo "$items" | grep "$selected_item_name" | awk -F ',' '{ print $2 }')"
-    echo item uuid: $selected_item_uuid > /dev/stderr # debug
+    echo item uuid: "$selected_item_uuid" > /dev/stderr # debug
 
     spinner_start "Fetching password"
     selected_item_password="$(get_item_password "$selected_item_uuid")"
     spinner_stop
     if $INCLUDE_PASSWORDS_IN_LOG; then
-      echo password: $selected_item_password > /dev/stderr # debug
+      echo password: "$selected_item_password" > /dev/stderr # debug
     fi
 
     if [ "$OPT_COPY_TO_CLIPBOARD" == "on" ]; then
@@ -130,7 +133,7 @@ main() {
   fi
 }
 
-main "$@" 2> >(tee $LOGFILE 1>&2)
+main "$@" 2> >(tee "$LOGFILE" 1>&2)
 if ! $OPT_DEBUG; then
   # Restore stderr
   exec 2>&3
