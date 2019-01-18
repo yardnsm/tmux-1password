@@ -33,7 +33,7 @@ else
 fi
 
 log(){
-  local -r input="$*"
+  read input
   if $OPT_DEBUG; then
     echo $input >> $LOGFILE
     echo $input >&2
