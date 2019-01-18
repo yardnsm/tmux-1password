@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")" \
-  || exit 1
+SCRIPTDIR="$(eval echo $(cd $( dirname "${BASH_SOURCE[0]}" ) && pwd))"
+cd "$SCRIPTDIR" || exit 1
 
 # ------------------------------------------------------------------------------
 
@@ -12,7 +12,6 @@ source "./spinner.sh"
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
 
-declare -r OPT_LPASS_USER="$(get_tmux_option "@lastpass-username" "unset")"
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
@@ -22,9 +21,20 @@ declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
 
 declare spinner_pid=""
 
-FILTER_URL="sudolikeaboss://local"
+# FILTER_URL="sudolikeaboss://local"
+FILTER_URL="https://github.com"
+LOGFILE="$SCRIPTDIR/../tmux-passwords.log"
+INCLUDE_PASSWORDS_IN_LOG=false
 
 source ../password_manager_configs.d/$OPT_MANAGER.sh
+
+if [ "$OPT_DEBUG" == "true" ]; then
+  echo "Debug information will be printed to $LOGFILE"
+else
+  # Supress errors by disabling stderr
+  exec 3>&2-
+  exec 2>/dev/null
+fi
 
 # ------------------------------------------------------------------------------
 
@@ -40,25 +50,31 @@ spinner_stop() {
   spinner_pid=""
 }
 
+pause(){
+  # give time to read any messages
+  read -rsp $'Press any key to continue...\n' -n1 key
+}
+
 # ------------------------------------------------------------------------------
 
 manager() {
   pwman=$OPT_MANAGER
   cmd=$1
   shift # Remove 1st arg (the cmd) from list
+  # Tee commands to send output to stderr as well as stdin.
+  echo -n INFO: $cmd output:: > /dev/stderr # debug
   case $cmd in
     login)
-      $pwman $logincmd "$otherOptsLogin" "$@"
+      $pwman $logincmd "$otherOptsLogin" "$@" | tee /dev/stderr
       ;;
     list)
-      $pwman $listcmd "$otherOptsList" "$@"
+      $pwman $listcmd "$otherOptsList" "$@" | tee /dev/stderr
       ;;
     get)
-      $pwman $getcmd "$otherOptsGet" "$@"
+      $pwman $getcmd "$otherOptsGet" "$@" | tee /dev/stderr
       ;;
     *)
-      echo Unknown command: $cmd
-      sleep 5
+      echo ERROR: Unknown command: $cmd > /dev/stderr # debug
       exit
       ;;
   esac
@@ -66,7 +82,10 @@ manager() {
 
 login() {
   manager login > "$TMP_TOKEN_FILE"
-  tput clear
+
+  if [ "$OPT_DEBUG" != "true" ]; then
+    tput clear
+  fi
 }
 
 get_session() {
@@ -74,10 +93,11 @@ get_session() {
 }
 
 get_items() {
-  if [ "$OPT_DEBUG" == "true" ]; then
-    filter_list "$(manager list)" > /dev/stderr
+  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    echo INFO: All items found: > /dev/stderr # debug
+    filter_list "$(manager list | tee /dev/stderr)"
   else
-    filter_list "$(manager list 2> /dev/null)"
+    filter_list "$(manager list)"
   fi
 }
 
@@ -92,10 +112,11 @@ filter_list(){
 
 get_item_password() {
   local -r ITEM_UUID="$1"
-  if [ "$OPT_DEBUG" == "true" ]; then
-    filter_get "$(manager get $ITEM_UUID)" > /dev/stderr
+  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    echo DEBUG: `manager get` output: > /dev/stderr # debug
+    filter_get "$(manager get $ITEM_UUID)" | tee /dev/stderr
   else
-    filter_get "$(manager get $ITEM_UUID 2> /dev/null)"
+    filter_get "$(manager get $ITEM_UUID)"
   fi
 }
 
@@ -121,20 +142,24 @@ main() {
   spinner_start "Fetching items"
   items="$(get_items)"
   spinner_stop
+  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    echo INFO: Matching items: $items > /dev/stderr # debug
+  fi
 
-  if [[ -z "$items" ]]; then
+  if [ -z "$items" ]; then
 
     if [ "$OPT_DEBUG" == "true" ]; then
+      echo "No matching items found. Will try to log in again." | tee /dev/stderr # debug
       # Give time to read any messages
-      sleep, 10
+      pause
     fi
     # Needs to login
     login
 
-    if [[ -z "$(get_session)" ]]; then
+    if [ -z "$(get_session)" ]; then
       display_message "1Password CLI signin has failed"
       # Give time to read any messages
-      sleep, 10
+      pause
       return 0
     fi
 
@@ -143,16 +168,20 @@ main() {
     spinner_stop
   fi
 
-  selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
+  selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi 2>/dev/tty)"
 
-  if [[ -n "$selected_item_name" ]]; then
+  if [ -n "$selected_item_name" ]; then
     selected_item_uuid="$(echo "$items" | grep "$selected_item_name" | awk -F ',' '{ print $2 }')"
+    echo item uuid: $selected_item_uuid > /dev/stderr # debug
 
     spinner_start "Fetching password"
     selected_item_password="$(get_item_password "$selected_item_uuid")"
     spinner_stop
+    if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+      echo password: $selected_item_password > /dev/stderr # debug
+    fi
 
-    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+    if [ "$OPT_COPY_TO_CLIPBOARD" == "on" ]; then
 
       # Copy password to clipboard
       copy_to_clipboard "$selected_item_password"
@@ -167,5 +196,12 @@ main() {
   fi
 }
 
-main "$@"
+# main "$@" 3> >(tee -a "$LOGFILE")
+# main "$@" 3> >(tee -a "$LOGFILE")
+# main "$@" | tee -a "$LOGFILE"
+main "$@" 2> $LOGFILE
+if [ "$OPT_DEBUG" != "true" ]; then
+  # Restore stderr
+  exec 2>&3
+fi
 # vim:sw=2:ts=2
