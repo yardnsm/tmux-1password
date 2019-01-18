@@ -17,25 +17,12 @@ login(){
 }
 
 get_items() {
-  listcmd="lpass show --json --expand-multi -G .*"
-  if $INCLUDE_PASSWORDS_IN_LOG; then
-    echo INFO: All items found: > /dev/stderr # debug
-    filter_list "$($listcmd | log)"
-  else
-    filter_list "$($listcmd)"
-  fi
-}
-
-JQ_FILTER_LIST="
-.[]
-| [select(.url == \"$FILTER_URL\")]
-| map([ .name, .id ]
-| join(\",\"))
-| .[]
-"
-filter_list(){
-  local -r input="$*"
-  echo $input | jq "$JQ_FILTER_LIST" --raw-output
+  echo INFO: All items found: > /dev/stderr # debug
+  itemlist="$(lpass ls)"
+  # Convert name [id: uuid] syntax to name,uuid
+  while read -r line; do
+    echo "$line" | sed 's/[^/]*\/\([^[]*\)\[id:\ \([^]]*\)\]/\1,\2/' | log
+  done <<< "$itemlist"
 }
 
 get_item_password() {

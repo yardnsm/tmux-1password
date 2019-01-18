@@ -76,12 +76,11 @@ main() {
   spinner_start "Fetching items"
   items="$(get_items)"
   spinner_stop
-  if $INCLUDE_PASSWORDS_IN_LOG; then
-    echo  # Newline after spinner
-    echo INFO: Matching items: $items > /dev/stderr # debug
-  fi
+  echo  # Newline after spinner
+  echo INFO: Matching items: $items > /dev/stderr # debug
 
-  if [ -z "$items" ]; then
+  # Check if items contains non-whitespace characters.
+  if [[ $str =~ ^\ +$ ]]; then
     # Needs to login
 
       if $OPT_DEBUG; then
@@ -99,7 +98,7 @@ main() {
       tput clear
     fi
     spinner_start "Fetching items"
-    items="$(get_items)"
+    items="$(get_items | log)"
     spinner_stop
   fi
 
