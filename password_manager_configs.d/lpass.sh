@@ -1,30 +1,30 @@
 #!/usr/bin/env bash
-# vim:ts=2:sw=2
-logincmd="login"
 OPT_LPASS_USER="$(get_tmux_option "@lastpass-username" "unset")"
+declare -r FILTER_URL="https://github.com"
 
-lastpass_login(){
+login(){
   if ! lpass status; then
     echo "Lastpass is not logged in."
     if [ -z "${LPUSERNAME}" ] && [ "unset" == "$OPT_LPASS_USER" ]; then
       echo "set @lastpass_username in tmux options or set LPUSERNAME to speed up this process in future"
-      read -r -p "Enter lastpass username : " LPUSERNAME
+      echo "Enter lastpass username: "
+      read -r LPUSERNAME
       OPT_LPASS_USER="$LPUSERNAME"
     fi
     if [ -z "$LPUSERNAME" ]; then LPUSERNAME="$OPT_LPASS_USER"; fi
     lpass login "$LPUSERNAME"
   fi
 }
-lastpass_login
 
-otherOptsLogin="$OPT_LPASS_USER"
-# listcmd="ls"
-# Creates an output that will match 1pass's output
-# 1pass_format_str=" [{ \"uuid\": \"%ai\", \"overview\": { \"URLs\": [ {\"u\": \"%al\" } ], \"title\": \"%an\" } }] "
-listcmd="show --json --expand-multi -G"
-otherOptsList=".*"
-getcmd="show"
-otherOptsGet="--json"
+get_items() {
+  listcmd="lpass show --json --expand-multi -G .*"
+  if $INCLUDE_PASSWORDS_IN_LOG; then
+    echo INFO: All items found: > /dev/stderr # debug
+    filter_list "$($listcmd | log)"
+  else
+    filter_list "$($listcmd)"
+  fi
+}
 
 JQ_FILTER_LIST="
 .[]
@@ -33,4 +33,18 @@ JQ_FILTER_LIST="
 | join(\",\"))
 | .[]
 "
-JQ_FILTER_GET=".[].password"
+filter_list(){
+  local -r input="$*"
+  echo $input | jq "$JQ_FILTER_LIST" --raw-output
+}
+
+get_item_password() {
+  local -r ITEM_UUID="$1"
+  getcmd="lpass show -p"
+  if $INCLUDE_PASSWORDS_IN_LOG; then
+    echo DEBUG: \`$getcmd\` output: > /dev/stderr # debug
+    $getcmd $ITEM_UUID | log
+  else
+    $getcmd $ITEM_UUID
+  fi
+}

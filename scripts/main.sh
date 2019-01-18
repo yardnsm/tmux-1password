@@ -24,13 +24,22 @@ INCLUDE_PASSWORDS_IN_LOG=false
 
 source ../password_manager_configs.d/$OPT_MANAGER.sh
 
-if [ "$OPT_DEBUG" == "true" ]; then
+if $OPT_DEBUG; then
   echo "Debug information will be printed to $LOGFILE"
 else
   # Supress errors by disabling stderr
   exec 3>&2-
   exec 2>/dev/null
 fi
+
+log(){
+  local -r input="$*"
+  if $OPT_DEBUG; then
+    echo $input >> $LOGFILE
+    echo $input >&2
+  fi
+  echo $input
+}
 
 # ------------------------------------------------------------------------------
 
@@ -48,82 +57,11 @@ spinner_stop() {
 
 pause(){
   # give time to read any messages
-  read -rsp $'Press any key to continue...\n' -n1 key
+  echo Press any key to continue... > /dev/tty
+  read -rs -n1 key
 }
 
 # ------------------------------------------------------------------------------
-
-manager() {
-  pwman=$OPT_MANAGER
-  cmd=$1
-  shift # Remove 1st arg (the cmd) from list
-  # Tee commands to send output to stderr as well as stdin.
-  echo -n INFO: $cmd output:: > /dev/stderr # debug
-  case $cmd in
-    login)
-      $pwman $logincmd "$otherOptsLogin" "$@" | tee /dev/stderr
-      ;;
-    list)
-      $pwman $listcmd "$otherOptsList" "$@" | tee /dev/stderr
-      ;;
-    get)
-      $pwman $getcmd "$otherOptsGet" "$@" | tee /dev/stderr
-      ;;
-    *)
-      echo ERROR: Unknown command: $cmd > /dev/stderr # debug
-      exit
-      ;;
-  esac
-}
-
-login() {
-  manager login > "$TMP_TOKEN_FILE"
-
-  if [ "$OPT_DEBUG" != "true" ]; then
-    tput clear
-  fi
-}
-
-get_session() {
-  cat "$TMP_TOKEN_FILE" 2> /dev/null
-}
-
-get_items() {
-  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
-    echo INFO: All items found: > /dev/stderr # debug
-    filter_list "$(manager list | tee /dev/stderr)"
-  else
-    filter_list "$(manager list)"
-  fi
-}
-
-filter_list(){
-  if [ -n "$USE_CUSTOM_FILTERS" ]; then
-    filter_list_custom "$@"
-  else
-    local -r input="$*"
-    echo $input | jq "$JQ_FILTER_LIST" --raw-output
-  fi
-}
-
-get_item_password() {
-  local -r ITEM_UUID="$1"
-  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
-    echo DEBUG: `manager get` output: > /dev/stderr # debug
-    filter_get "$(manager get $ITEM_UUID)" | tee /dev/stderr
-  else
-    filter_get "$(manager get $ITEM_UUID)"
-  fi
-}
-
-filter_get(){
-  if [ -n "$USE_CUSTOM_FILTERS" ]; then
-    filter_get_custom "$@"
-  else
-    local -r input="$*"
-    echo $input | jq "$JQ_FILTER_GET" --raw-output
-  fi
-}
 
 # ------------------------------------------------------------------------------
 
@@ -138,27 +76,28 @@ main() {
   spinner_start "Fetching items"
   items="$(get_items)"
   spinner_stop
-  if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+  if $INCLUDE_PASSWORDS_IN_LOG; then
+    echo  # Newline after spinner
     echo INFO: Matching items: $items > /dev/stderr # debug
   fi
 
   if [ -z "$items" ]; then
-
-    if [ "$OPT_DEBUG" == "true" ]; then
-      echo "No matching items found. Will try to log in again." | tee /dev/stderr # debug
-      # Give time to read any messages
-      pause
-    fi
     # Needs to login
-    login
 
-    if [ -z "$(get_session)" ]; then
-      display_message "1Password CLI signin has failed"
+      if $OPT_DEBUG; then
+      echo "No matching items found. Will try to log in." | log # debug
       # Give time to read any messages
       pause
-      return 0
     fi
-
+    login
+    if $OPT_DEBUG; then
+      echo "Login output shown above." | log # debug
+      # Give time to read any messages
+      pause
+    fi
+    if ! $OPT_DEBUG; then
+      tput clear
+    fi
     spinner_start "Fetching items"
     items="$(get_items)"
     spinner_stop
@@ -173,7 +112,7 @@ main() {
     spinner_start "Fetching password"
     selected_item_password="$(get_item_password "$selected_item_uuid")"
     spinner_stop
-    if [ "$INCLUDE_PASSWORDS_IN_LOG" ]; then
+    if $INCLUDE_PASSWORDS_IN_LOG; then
       echo password: $selected_item_password > /dev/stderr # debug
     fi
 
@@ -192,12 +131,8 @@ main() {
   fi
 }
 
-# main "$@" 3> >(tee -a "$LOGFILE")
-# main "$@" 3> >(tee -a "$LOGFILE")
-# main "$@" | tee -a "$LOGFILE"
-main "$@" 2> $LOGFILE
-if [ "$OPT_DEBUG" != "true" ]; then
+main "$@" 2> >(tee $LOGFILE 1>&2)
+if ! $OPT_DEBUG; then
   # Restore stderr
   exec 2>&3
 fi
-# vim:sw=2:ts=2

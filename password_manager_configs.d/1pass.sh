@@ -1,60 +1,31 @@
 #!/usr/bin/env bash
-# vim:ts=2:sw=2
-logincmd="1pass"
-otherOptsLogin=""
-listcmd="1pass"
-otherOptsList=""
-getcmd="-p"
-otherOptsGet=""
-
-
-USE_CUSTOM_FILTERS=true
-
-JQ_FILTER_LIST="
-.[]
-| [select(.url == \"$FILTER_URL\")]
-| map([ .name, .name ]
-| join(\",\"))
-| .[]
-"
-JQ_FILTER_GET=".[].password"
-JQ_FILTER_LIST="
-.[]
-| [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
-| map([ .overview.title, .uuid ]
-| join(\",\"))
-| .[]
-"
-JQ_FILTER_GET="
-.details
-| if .password then
-.password
-  else
-    .fields[]
-    | select (.designation == \"password\")
-    | .value
-  end
-"
-
-convertToJson(){
-  input="$*"
-  output=""
-  json="[{}]"
-  # for line in $input; do
-  #   json=$(jq "add_element")
-  # done
+login(){
+  1pass -rv
 }
-
-# 1pass can only do 2 things: list names, and return a password. No json.
-filter_list_custom(){
-  local -r input="$*"
-  while read -r line; do
-    output="${output}${line},${line}\n"
-  done <<< "$input"
-  echo $output
+get_items(){
+  1pass
 }
 
 filter_get_custom(){
   local -r input="$*"
   echo 1pass -p $input
+}
+get_items() {
+  echo INFO: All items found: > /dev/stderr # debug
+  itemlist="$(1pass | log)"
+  while read -r line; do
+    # Double the input (uses the name as the uuid).
+    echo "$line" | awk '{print $0 "," $0}'
+  done <<< "$itemlist"
+}
+
+get_item_password() {
+  local -r ITEM_UUID="$1"
+  getcmd="1pass -p \"$ITEM_UUID\""
+  if $INCLUDE_PASSWORDS_IN_LOG; then
+    echo DEBUG: `1pass -p` output: > /dev/stderr # debug
+    $getcmd | log
+  else
+    $getcmd
+  fi
 }
