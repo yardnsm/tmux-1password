@@ -10,19 +10,15 @@ source "./spinner.sh"
 
 # ------------------------------------------------------------------------------
 
-declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
-
-declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
-declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
-declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
-declare -r OPT_CLEAR_CLIPBOARD_TIME="$(get_tmux_option "@1password-clipboard-duration" "30")"
-declare -r OPT_MANAGER="$(get_tmux_option "@password-manager-cmd" "on")"
-declare -r OPT_DEBUG="$(get_tmux_option "@tmux-1pass-debug" "false")"
+declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@passwords-copy-to-clipboard" "off")"
+declare -r OPT_CLEAR_CLIPBOARD_TIME="$(get_tmux_option "@passwords-clipboard-duration" "30")"
+declare -r OPT_MANAGER="$(get_tmux_option "@passwords-manager-cmd" "on")"
+declare -r OPT_DEBUG="$(get_tmux_option "@passwords-debug" "false")"
 
 declare spinner_pid=""
 
-# FILTER_URL="sudolikeaboss://local"
-FILTER_URL="https://github.com"
+# FILTER_URL="https://github.com"
+
 LOGFILE="$SCRIPTDIR/../tmux-passwords.log"
 INCLUDE_PASSWORDS_IN_LOG=false
 

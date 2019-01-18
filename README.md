@@ -97,27 +97,47 @@ In order to show only relevant login items and to maintain compatibility with
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
 environment afterwards.
 
-#### Set Lastpass username (required when logging in again)
-
-```
-set -g @lastpass-username 'x'
-```
-
 #### Changing the default manager for this plugin
 
 This should be the command typed at the prompt.
 
 ```
-set -g @password-manager-cmd 'op'
+set -g @passwords-manager-cmd 'op'
 ```
 
 #### Changing the default key-binding for this plugin
 
 ```
-set -g @1password-key 'x'
+set -g @passwords-key 'x'
 ```
 
 Default: `'u'`
+
+
+#### Copy the password to clipboard
+
+By default, the plugin will use `send-keys` to send the selected password to the targeted pane. By
+setting the following, the password will be copied to the system's clipboard, which will be cleared
+after `1password-clipboard-duration` seconds (default 30).
+
+```
+set -g @passwords-copy-to-clipboard 'on'
+set -g @passwords-clipboard-duration '30'
+```
+
+Default: `'off'`
+
+#### Debug
+
+Enables extra logging and printouts to help with issues.
+
+```
+set -g @passwords-debug 'true'
+```
+
+Default: `'false'`
+
+### 1Password config
 
 #### Setting the 1Password signin subdomain
 
@@ -127,6 +147,7 @@ set -g @1password-subdomain 'acme'
 
 Default: `'my'`
 
+
 #### Setting the default 1Password vault
 
 ```
@@ -135,18 +156,15 @@ set -g @1password-vault 'work'
 
 Default: `''` (all vaults)
 
-#### Copy the password to clipboard
 
-By default, the plugin will use `send-keys` to send the selected password to the targeted pane. By
-setting the following, the password will be copied to the system's clipboard, which will be cleared
-after `1password-clipboard-duration` seconds (default 30).
+### Lastpass config
+
+#### Set Lastpass username (required when logging in again)
 
 ```
-set -g @1password-copy-to-clipboard 'on'
-set -g @1password-clipboard-duration '30'
+set -g @lastpass-username 'x'
 ```
 
-Default: `'off'`
 
 ## Prior art
 

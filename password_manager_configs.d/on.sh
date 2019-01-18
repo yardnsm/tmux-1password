@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 # vim:ts=2:sw=2
+
+declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
+declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
+
+declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
+
+FILTER_URL="sudolikeaboss://local"
+
 logincmd="signin"
 otherOptsLogin="\"$OPT_SUBDOMAIN\" --output=raw"
 listcmd="list items"
@@ -21,7 +29,7 @@ otherOptsGet="--session=\"$(get_session)\""
 # ]
 JQ_FILTER_LIST="
 .[]
-| [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
+| [select(.overview.URLs | map(select(.u == \"$FILTER_URL\")) | length == 1)?]
 | map([ .overview.title, .uuid ]
 | join(\",\"))
 | .[]
@@ -30,8 +38,7 @@ JQ_FILTER_LIST="
 # There are two different kind of items that
 # we support: login items and passwords.
 #
-# * Login items:
-#       {
+# * Login items: {
 #         "details": {
 #           "fields": [
 #             {
