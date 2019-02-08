@@ -97,7 +97,7 @@ get_op_item_password() {
 
   local -r JQ_FILTER="
     .details
-    | if .password then
+    | if .password and .password != \"\" then
         .password
       else
         .fields[]
