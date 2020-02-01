@@ -84,6 +84,13 @@ get_op_items() {
     | jq "$JQ_FILTER" --raw-output
 }
 
+cache_items() {
+  local items=$@
+  local cache_file="/tmp/tmux-op-items"
+
+  echo $items > $cache_file
+}
+
 get_op_item_password() {
   local -r ITEM_UUID="$1"
 
@@ -153,6 +160,7 @@ main() {
     spinner_stop
   fi
 
+  cache_items $items
   selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
 
   if [[ -n "$selected_item_name" ]]; then
