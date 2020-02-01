@@ -46,7 +46,16 @@ op_get_session() {
 }
 
 get_op_items() {
+  local cache_file="/tmp/tmux-op-items"
 
+  if [ -e $cache_file ]; then
+    echo "$(cat $cache_file)"
+  else
+    fetch_items
+  fi
+}
+
+fetch_items() {
   # The structure (we need) looks like the following:
   # [
   #   {
@@ -82,6 +91,25 @@ get_op_items() {
 
   op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
     | jq "$JQ_FILTER" --raw-output
+}
+
+cache_items() {
+  local items=$1
+  local cache_file="/tmp/tmux-op-items"
+
+  if ! [ -e $cache_file ]; then
+    echo "$items" > $cache_file
+  else
+    local last_update="$(stat -c %Y $cache_file)"
+    local now="$(date +%s)"
+    local seconds_since_last_update="$(($now-$last_update))"
+
+    # Remove cache file if last cache was from 6h ago
+    if [[ $seconds_since_last_update < 21600 ]]; then
+      display_message "ok"
+      rm $cache_file
+    fi
+  fi
 }
 
 get_op_item_password() {
@@ -153,6 +181,7 @@ main() {
     spinner_stop
   fi
 
+  cache_items "$items"
   selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
 
   if [[ -n "$selected_item_name" ]]; then
