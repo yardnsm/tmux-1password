@@ -106,7 +106,6 @@ cache_items() {
 
     # Remove cache file if last cache was from 6h ago
     if [[ $seconds_since_last_update < 21600 ]]; then
-      display_message "ok"
       rm $cache_file
     fi
   fi
