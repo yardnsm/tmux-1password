@@ -11,6 +11,8 @@ source "./spinner.sh"
 # ------------------------------------------------------------------------------
 
 declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
+declare -r CACHE_FILE="/tmp/tmux-op-items"
+declare -r CACHE_TTL=21600
 
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
@@ -46,10 +48,8 @@ op_get_session() {
 }
 
 get_op_items() {
-  local cache_file="/tmp/tmux-op-items"
-
-  if [ -e $cache_file ]; then
-    echo "$(cat $cache_file)"
+  if [[ -e $CACHE_FILE ]]; then
+    echo "$(cat $CACHE_FILE)"
   else
     fetch_items
   fi
@@ -95,18 +95,17 @@ fetch_items() {
 
 cache_items() {
   local items=$1
-  local cache_file="/tmp/tmux-op-items"
 
-  if ! [ -e $cache_file ]; then
-    echo "$items" > $cache_file
+  if ! [[ -e $CACHE_FILE ]]; then
+    echo "$items" > $CACHE_FILE
   else
-    local last_update="$(stat -c %Y $cache_file)"
+    local last_update="$(stat -c %Y $CACHE_FILE)"
     local now="$(date +%s)"
     local seconds_since_last_update="$(($now-$last_update))"
 
     # Remove cache file if last cache was from 6h ago
-    if [[ $seconds_since_last_update < 21600 ]]; then
-      rm $cache_file
+    if [[ $seconds_since_last_update < $CACHE_TTL ]]; then
+      rm $CACHE_FILE
     fi
   fi
 }

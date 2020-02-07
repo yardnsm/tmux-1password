@@ -22,6 +22,7 @@ This plugin relies on the following:
 In any tmux mode:
 
 - `prefix + u` - list login items in a bottom pane.
+- `prefix + C` - clear the cache of tmux-1password.
 
 ## Install
 
@@ -169,6 +170,12 @@ Items come in the following format from which the filter operates:
   }
 ]
 ```
+
+## Security
+
+This plugin is based on using `op list-items` to get a filtered list of passwords from your vault, and them asking for the password you wan't with `get-item`. To improve the performance, we've added a file cache, stored at `tmp/tmux-op-items` which has a TTL of 6 hours and stores a simple list containing your account names and the related IDs.
+
+**No password is stored on the disk,** just a simple pointer to be used in the future when you ask to fetch a specific password.
 
 ## Prior art
 
