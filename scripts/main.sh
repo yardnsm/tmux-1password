@@ -10,9 +10,9 @@ source "./spinner.sh"
 
 # ------------------------------------------------------------------------------
 
-declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
+declare -r TMP_TOKEN_FILE="/tmp/tmux-op-token"
 declare -r CACHE_FILE="/tmp/tmux-op-items"
-declare -r CACHE_TTL=21600
+declare -r CACHE_TTL=1800 # 30 minutes, since we cannot fetch passwords with invalid session token
 
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
