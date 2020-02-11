@@ -33,7 +33,7 @@ main() {
   tmux bind-key "$opt_key" \
     run "tmux split-window -l 10 \"$CURRENT_DIR/scripts/main.sh '#{pane_id}'\""
 
-  tmux bind-key "$clear_key" run "$CURRENT_DIR/scripts/clear.sh"
+  tmux bind-key "$clear_key" run "$CURRENT_DIR/scripts/main.sh clear-cache"
 }
 
 main "$@"

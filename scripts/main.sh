@@ -48,10 +48,25 @@ op_get_session() {
 }
 
 get_op_items() {
+  clear_old_cache
+
   if [[ -e $CACHE_FILE ]]; then
     echo "$(cat $CACHE_FILE)"
   else
     fetch_items
+  fi
+}
+
+clear_old_cache() {
+  if [[ -e $CACHE_FILE ]]; then
+    local last_update="$(stat -c %Y $CACHE_FILE)"
+    local now="$(date +%s)"
+    local seconds_since_last_update="$(($now-$last_update))"
+
+    # Remove cache file if last cache was from 30 minutes ago
+    if [[ $seconds_since_last_update < $CACHE_TTL ]]; then
+      rm $CACHE_FILE
+    fi
   fi
 }
 
@@ -98,15 +113,6 @@ cache_items() {
 
   if ! [[ -e $CACHE_FILE ]]; then
     echo "$items" > $CACHE_FILE
-  else
-    local last_update="$(stat -c %Y $CACHE_FILE)"
-    local now="$(date +%s)"
-    local seconds_since_last_update="$(($now-$last_update))"
-
-    # Remove cache file if last cache was from 6h ago
-    if [[ $seconds_since_last_update < $CACHE_TTL ]]; then
-      rm $CACHE_FILE
-    fi
   fi
 }
 
@@ -153,6 +159,22 @@ get_op_item_password() {
 # ------------------------------------------------------------------------------
 
 main() {
+  local -r command=$@
+
+  if [[ $command == "clear-cache" ]]; then
+    clear_cache
+  else
+    prompt_op $@
+  fi
+}
+
+clear_cache() {
+  rm $CACHE_FILE
+
+  display_message "Cache cleared"
+}
+
+prompt_op() {
   local -r ACTIVE_PANE="$1"
 
   local items
@@ -197,7 +219,6 @@ main() {
       # Clear clipboard
       clear_clipboard 30
     else
-
       # Use `send-keys`
       tmux send-keys -t "$ACTIVE_PANE" "$selected_item_password"
     fi
