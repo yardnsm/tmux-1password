@@ -87,13 +87,21 @@ customized filtering, see configuration options `@1password-enabled-url-filter` 
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
 environment afterwards.
 
-#### Changing the default key-binding for this plugin
+#### Changing the default key-binding for running this plugin
 
 ```
 set -g @1password-key 'x'
 ```
 
 Default: `'u'`
+
+#### Changing the default key-binding for clearing the cache of this plugin
+
+```
+set -g @1password-clear-cache-key 'X'
+```
+
+Default: 'C'
 
 #### Setting the signin subdomain
 

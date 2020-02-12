@@ -28,7 +28,7 @@ main() {
   done
 
   local -r opt_key="$(get_tmux_option "@1password-key" "u")"
-  local -r clear_key="$(get_tmux_option "@1password-key" "C")"
+  local -r clear_key="$(get_tmux_option "@1password-clear-cache-key" "C")"
 
   tmux bind-key "$opt_key" \
     run "tmux split-window -l 10 \"$CURRENT_DIR/scripts/main.sh '#{pane_id}'\""

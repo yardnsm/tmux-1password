@@ -158,16 +158,6 @@ get_op_item_password() {
 
 # ------------------------------------------------------------------------------
 
-main() {
-  local -r command=$@
-
-  if [[ $command == "clear-cache" ]]; then
-    clear_cache
-  else
-    prompt_op $@
-  fi
-}
-
 clear_cache() {
   rm $CACHE_FILE
 
@@ -222,6 +212,16 @@ prompt_op() {
       # Use `send-keys`
       tmux send-keys -t "$ACTIVE_PANE" "$selected_item_password"
     fi
+  fi
+}
+
+main() {
+  local -r command=$@
+
+  if [[ $command == "clear-cache" ]]; then
+    clear_cache
+  else
+    prompt_op $@
   fi
 }
 
