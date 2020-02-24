@@ -77,8 +77,10 @@ sessions expires automatically after 30 minutes of inactivity.
 ### Configuring login items in 1Password
 
 In order to show only relevant login items and to maintain compatibility with
-[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss), its required to set the value of the
-`website` field for each login item with the value of `sudolikeaboss://local`.
+[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss), by default it is required to set the
+value of the `website` field for each login item with the value of `sudolikeaboss://local`. To
+override this behavior and provide customized filtering, see configuration options
+`@1password-enabled-url-filter` and `@1password-items-jq-filter` below.
 
 ## Configuration
 
@@ -120,6 +122,54 @@ set -g @1password-copy-to-clipboard 'on'
 ```
 
 Default: `'off'`
+
+#### Enabled URL Filter
+
+By default, the plugin maintains compatibility with [sudolikeaboss](https://github.com/ravenac95/sudolikeaboss) by
+filtering urls using the string "sudolikeaboss://local", by setting the following, the list of items will no longer be
+filtered.
+
+```
+set -g @1password-enabled-url-filter 'off'
+```
+
+Default: `'on'`
+
+#### Customize URL Filtering
+
+If complete customization of url filtering is required, a `jq` filter can be provided to filter and map
+items.
+
+##### Filtering by tags
+
+```
+set -g @1password-items-jq-filter '.[] | [select(.overview.tags | map(select(. == "tag_name")) | length == 1)?] | map([ .overview.title, .uuid ] | join(",")) | .[]'
+```
+
+##### Filtering by custom url
+
+```
+set -g @1password-items-jq-filter '.[] | [select(.overview.URLs | map(select(.u == "myspecial-url-filter")) | length == 1)?] | map([ .overview.title, .uuid ] | join(",")) | .[]'
+```
+
+Default: `''`
+
+Items come in the following format from which the filter operates:
+
+```
+[
+  {
+    "uuid": "some-long-uuid",
+    "overview": {
+      "URLs": [
+        { "u": "sudolikeaboss://local" }
+      ],
+      "title": "Some item",
+      "tags": ["tag_name"]
+    }
+  }
+]
+```
 
 ## Prior art
 
