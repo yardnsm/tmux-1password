@@ -117,8 +117,8 @@ Default: `'off'`
 
 #### Customize URL Filtering
 
-By default, all of th items will be shown. If complete customization of url filtering is required, a
-`jq` filter can be provided to filter and map items.
+By default, all of the items will be shown. If complete customization of url filtering is required,
+a `jq` filter can be provided to filter and map items.
 
 Items come in the following format from which the filter operates:
 
@@ -159,8 +159,8 @@ set -g @1password-items-jq-filter '
 ##### Filtering by custom url
 
 The following example will filter only the items that has a website field with the value of
-`sudolikeaboss://local`, similar to way [sudolikeaboss](https://github.com/ravenac95/sudolikeaboss)
-used to work.
+`sudolikeaboss://local`, similar to the way
+[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss) used to work.
 
 ```sh
 set -g @1password-items-jq-filter ' \
