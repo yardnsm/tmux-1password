@@ -148,11 +148,11 @@ The following example will filter only the items that has a tag with a value of 
 
 ```sh
 set -g @1password-items-jq-filter '
-  .[]
-  | [select(.overview.tags | map(select(. == "some_tag")) | length == 1)?]
-  | map([ .overview.title, .uuid ]
-  | join(","))
-  | .[]
+  .[] \
+  | [select(.overview.tags | map(select(. == "some_tag")) | length == 1)?] \
+  | map([ .overview.title, .uuid ] \
+  | join(",")) \
+  | .[] \
 '
 ```
 
@@ -163,12 +163,12 @@ The following example will filter only the items that has a website field with t
 used to work.
 
 ```sh
-set -g @1password-items-jq-filter '
-  .[]
-  | [select(.overview.URLs | map(select(.u == "sudolikeaboss://local")) | length == 1)?]
-  | map([ .overview.title, .uuid ]
-  | join(","))
-  | .[]
+set -g @1password-items-jq-filter ' \
+  .[] \
+  | [select(.overview.URLs | map(select(.u == "sudolikeaboss://local")) | length == 1)?] \
+  | map([ .overview.title, .uuid ] \
+  | join(",")) \
+  | .[] \
 '
 ```
 
