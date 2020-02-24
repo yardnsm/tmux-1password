@@ -74,12 +74,6 @@ and its password will automatically be filled.
 You may be required to perform a re-login (directly in the opened pane) since the 1Password CLI's
 sessions expires automatically after 30 minutes of inactivity.
 
-### Configuring login items in 1Password
-
-In order to show only relevant login items and to maintain compatibility with
-[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss), its required to set the value of the
-`website` field for each login item with the value of `sudolikeaboss://local`.
-
 ## Configuration
 
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
@@ -120,6 +114,63 @@ set -g @1password-copy-to-clipboard 'on'
 ```
 
 Default: `'off'`
+
+#### Customize URL Filtering
+
+By default, all of the items will be shown. If complete customization of url filtering is required,
+a `jq` filter can be provided to filter and map items.
+
+Items come in the following format from which the filter operates:
+
+```json
+[
+  {
+    "uuid": "some-long-uuid",
+    "overview": {
+      "URLs": [
+        { "u": "sudolikeaboss://local" }
+      ],
+      "title": "Some item",
+      "tags": ["some_tag"]
+    }
+  }
+]
+```
+
+
+Default: `''`
+
+#### Examples
+
+##### Filtering by tags
+
+The following example will filter only the items that has a tag with a value of `some_tag`.
+
+```sh
+set -g @1password-items-jq-filter '
+  .[] \
+  | [select(.overview.tags | map(select(. == "some_tag")) | length == 1)?] \
+  | map([ .overview.title, .uuid ] \
+  | join(",")) \
+  | .[] \
+'
+```
+
+##### Filtering by custom url
+
+The following example will filter only the items that has a website field with the value of
+`sudolikeaboss://local`, similar to the way
+[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss) used to work.
+
+```sh
+set -g @1password-items-jq-filter ' \
+  .[] \
+  | [select(.overview.URLs | map(select(.u == "sudolikeaboss://local")) | length == 1)?] \
+  | map([ .overview.title, .uuid ] \
+  | join(",")) \
+  | .[] \
+'
+```
 
 ## Prior art
 

@@ -15,6 +15,7 @@ declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
+declare -r OPT_ITEMS_JQ_FILTER="$(get_tmux_option "@1password-items-jq-filter" "")"
 
 declare spinner_pid=""
 
@@ -53,18 +54,25 @@ get_op_items() {
   #       "URLs": [
   #         { "u": "sudolikeaboss://local" }
   #       ],
-  #       "title": "Some item"
+  #       "title": "Some item",
+  #       "tags": ["some_tag"]
   #     }
   #   }
   # ]
 
-  local -r JQ_FILTER="
-    .[]
-    | [select(.overview.URLs | map(select(.u == \"sudolikeaboss://local\")) | length == 1)?]
-    | map([ .overview.title, .uuid ]
-    | join(\",\"))
-    | .[]
-  "
+  local JQ_FILTER
+
+  if [[ -n "$OPT_ITEMS_JQ_FILTER" ]]; then
+    JQ_FILTER="$OPT_ITEMS_JQ_FILTER"
+  else
+    JQ_FILTER="
+      .[]
+      | [select(.overview.URLs | map(select(.u)) | length == 1)?]
+      | map([ .overview.title, .uuid ]
+      | join(\",\"))
+      | .[]
+    "
+  fi
 
   op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
     | jq "$JQ_FILTER" --raw-output
