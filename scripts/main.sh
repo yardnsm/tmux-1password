@@ -63,7 +63,7 @@ clear_old_cache() {
     local seconds_since_last_update="$(($now-$last_update))"
 
     # Remove cache file if last cache was from 30 minutes ago
-    if [[ $seconds_since_last_update < $CACHE_TTL ]]; then
+    if [[ $seconds_since_last_update > $CACHE_TTL ]]; then
       rm $CACHE_FILE
     fi
   fi
