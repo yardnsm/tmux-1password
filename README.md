@@ -75,13 +75,6 @@ and its password will automatically be filled.
 You may be required to perform a re-login (directly in the opened pane) since the 1Password CLI's
 sessions expires automatically after 30 minutes of inactivity.
 
-### Configuring login items in 1Password
-
-In order to show only relevant login items and to maintain compatibility with
-[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss), by default it is required to set the value of the
-`website` field for each login item with the value of `sudolikeaboss://local`. To override this behavior and provide
-customized filtering, see configuration options `@1password-enabled-url-filter` and `@1password-items-jq-filter` below.
-
 ## Configuration
 
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
@@ -131,59 +124,37 @@ set -g @1password-copy-to-clipboard 'on'
 
 Default: `'off'`
 
-#### Enabled URL Filter
-
-By default, the plugin maintains compatibility with [sudolikeaboss](https://github.com/ravenac95/sudolikeaboss) by
-filtering urls using the string "sudolikeaboss://local", by setting the following, the list of items will no longer be
-filtered.
-
-```
-set -g @1password-enabled-url-filter 'off'
-```
-
-Default: `'on'`
-
-#### Customize URL Filtering
-
-If complete customization of url filtering is required, a `jq` filter can be provided to filter and map
-items.
+#### Examples
 
 ##### Filtering by tags
 
-```
-set -g @1password-items-jq-filter '.[] | [select(.overview.tags | map(select(. == "tag_name")) | length == 1)?] | map([ .overview.title, .uuid ] | join(",")) | .[]'
+The following example will filter only the items that has a tag with a value of `some_tag`.
+
+```sh
+set -g @1password-items-jq-filter '
+  .[] \
+  | [select(.overview.tags | map(select(. == "some_tag")) | length == 1)?] \
+  | map([ .overview.title, .uuid ] \
+  | join(",")) \
+  | .[] \
+'
 ```
 
 ##### Filtering by custom url
 
+The following example will filter only the items that has a website field with the value of
+`sudolikeaboss://local`, similar to the way
+[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss) used to work.
+
+```sh
+set -g @1password-items-jq-filter ' \
+  .[] \
+  | [select(.overview.URLs | map(select(.u == "sudolikeaboss://local")) | length == 1)?] \
+  | map([ .overview.title, .uuid ] \
+  | join(",")) \
+  | .[] \
+'
 ```
-set -g @1password-items-jq-filter '.[] | [select(.overview.URLs | map(select(.u == "myspecial-url-filter")) | length == 1)?] | map([ .overview.title, .uuid ] | join(",")) | .[]'
-```
-
-Default: `''`
-
-Items come in the following format from which the filter operates:
-
-```
-[
-  {
-    "uuid": "some-long-uuid",
-    "overview": {
-      "URLs": [
-        { "u": "sudolikeaboss://local" }
-      ],
-      "title": "Some item",
-      "tags": ["tag_name"]
-    }
-  }
-]
-```
-
-## Security
-
-This plugin is based on using `op list-items` to get a filtered list of passwords from your vault, and them asking for the password you want with `op get-item`. To improve the performance, we've added a cache file which has a TTL of 30 minutes and stores a simple list containing your account names and the related IDs.
-
-**No password is stored on the disk,** just a simple pointer to be used in the future when you ask to fetch a specific password.
 
 ## Prior art
 
