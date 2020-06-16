@@ -26,8 +26,8 @@ is_cmd_exists() {
 copy_to_clipboard() {
   if [[ "$(uname)" == "Darwin" ]] && is_cmd_exists "pbcopy"; then
     echo -n "$1" | pbcopy
-  elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "xclip"; then
-    echo -n "$1" | xclip -i
+  elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "$OPT_CLIPBOARD_CMD"; then
+    echo -n "$1" | "$OPT_CLIPBOARD_CMD" "$OPT_CLIPBOARD_OPTS"
   else
     return 1
   fi
@@ -38,8 +38,8 @@ clear_clipboard() {
 
   if [[ "$(uname)" == "Darwin" ]] && is_cmd_exists "pbcopy"; then
     tmux run-shell -b "sleep $SEC && echo '' | pbcopy"
-  elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "xclip"; then
-    tmux run-shell -b "sleep $SEC && echo '' | xclip -i"
+  elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "$OPT_CLIPBOARD_CMD"; then
+    tmux run-shell -b "sleep $SEC && echo '' | $OPT_CLIPBOARD_CMD $OPT_CLIPBOARD_OPTS"
   else
     return 1
   fi
