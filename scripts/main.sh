@@ -10,7 +10,9 @@ source "./spinner.sh"
 
 # ------------------------------------------------------------------------------
 
-declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
+declare -r TMP_TOKEN_FILE="/tmp/tmux-op-token"
+declare -r CACHE_FILE="/tmp/tmux-op-items"
+declare -r CACHE_TTL=1800 # 30 minutes, since we cannot fetch passwords with invalid session token
 
 declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
 declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
@@ -45,7 +47,29 @@ op_get_session() {
 }
 
 get_op_items() {
+  clear_old_cache
 
+  if [[ -e $CACHE_FILE ]]; then
+    echo "$(cat $CACHE_FILE)"
+  else
+    fetch_items
+  fi
+}
+
+clear_old_cache() {
+  if [[ -e $CACHE_FILE ]]; then
+    local last_update="$(stat -c %Y $CACHE_FILE)"
+    local now="$(date +%s)"
+    local seconds_since_last_update="$(($now-$last_update))"
+
+    # Remove cache file if last cache was from 30 minutes ago
+    if [[ $seconds_since_last_update > $CACHE_TTL ]]; then
+      rm $CACHE_FILE
+    fi
+  fi
+}
+
+fetch_items() {
   # The structure (we need) looks like the following:
   # [
   #   {
@@ -76,6 +100,14 @@ get_op_items() {
 
   op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
     | jq "$JQ_FILTER" --raw-output
+}
+
+cache_items() {
+  local items=$1
+
+  if ! [[ -e $CACHE_FILE ]]; then
+    echo "$items" > $CACHE_FILE
+  fi
 }
 
 get_op_item_password() {
@@ -120,7 +152,13 @@ get_op_item_password() {
 
 # ------------------------------------------------------------------------------
 
-main() {
+clear_cache() {
+  rm $CACHE_FILE
+
+  display_message "Cache cleared"
+}
+
+prompt_op() {
   local -r ACTIVE_PANE="$1"
 
   local items
@@ -147,6 +185,7 @@ main() {
     spinner_stop
   fi
 
+  cache_items "$items"
   selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
 
   if [[ -n "$selected_item_name" ]]; then
@@ -164,10 +203,19 @@ main() {
       # Clear clipboard
       clear_clipboard 30
     else
-
       # Use `send-keys`
       tmux send-keys -t "$ACTIVE_PANE" "$selected_item_password"
     fi
+  fi
+}
+
+main() {
+  local -r command=$@
+
+  if [[ $command == "clear-cache" ]]; then
+    clear_cache
+  else
+    prompt_op $@
   fi
 }
 

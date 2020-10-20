@@ -22,6 +22,7 @@ This plugin relies on the following:
 In any tmux mode:
 
 - `prefix + u` - list login items in a bottom pane.
+- `prefix + C` - clear the cache of tmux-1password.
 
 ## Install
 
@@ -79,13 +80,21 @@ sessions expires automatically after 30 minutes of inactivity.
 Customize this plugin by setting these options in your `.tmux.conf` file. Make sure to reload the
 environment afterwards.
 
-#### Changing the default key-binding for this plugin
+#### Changing the default key-binding for running this plugin
 
 ```
 set -g @1password-key 'x'
 ```
 
 Default: `'u'`
+
+#### Changing the default key-binding for clearing the cache of this plugin
+
+```
+set -g @1password-clear-cache-key 'X'
+```
+
+Default: 'C'
 
 #### Setting the signin subdomain
 
@@ -114,31 +123,6 @@ set -g @1password-copy-to-clipboard 'on'
 ```
 
 Default: `'off'`
-
-#### Customize URL Filtering
-
-By default, all of the items will be shown. If complete customization of url filtering is required,
-a `jq` filter can be provided to filter and map items.
-
-Items come in the following format from which the filter operates:
-
-```json
-[
-  {
-    "uuid": "some-long-uuid",
-    "overview": {
-      "URLs": [
-        { "u": "sudolikeaboss://local" }
-      ],
-      "title": "Some item",
-      "tags": ["some_tag"]
-    }
-  }
-]
-```
-
-
-Default: `''`
 
 #### Examples
 
