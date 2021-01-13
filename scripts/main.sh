@@ -126,11 +126,6 @@ get_op_item_totp() {
 
 # ------------------------------------------------------------------------------
 
-export FZF_DEFAULT_OPTS="
-  --bind 'enter:execute(echo pass,{+})+abort'
-  --bind 'ctrl-u:execute(echo totp,{+})+abort'
-"
-
 main() {
   local -r ACTIVE_PANE="$1"
 
@@ -139,6 +134,12 @@ main() {
   local selected_item_name
   local selected_item_uuid
   local selected_item_password
+
+  local -ra fzf_opts=(
+    --no-multi
+    --header="enter=password, ctrl-u=totp"
+    --bind "enter:execute(echo pass,{+})+abort"
+    --bind "ctrl-u:execute(echo totp,{+})+abort")
 
   spinner_start "Fetching items"
   items="$(get_op_items)"
@@ -159,7 +160,7 @@ main() {
     spinner_stop
   fi
 
-  selected_item="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
+  selected_item="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")"
 
   if [[ -n "$selected_item" ]]; then
     selected_item_name=${selected_item#*,}
