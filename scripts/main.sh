@@ -118,15 +118,28 @@ get_op_item_password() {
     | jq "$JQ_FILTER" --raw-output
 }
 
+get_op_item_totp() {
+  local -r ITEM_UUID="$1"
+
+  op get totp "$ITEM_UUID" --session="$(op_get_session)"
+}
+
 # ------------------------------------------------------------------------------
 
 main() {
   local -r ACTIVE_PANE="$1"
 
   local items
+  local selected_item
   local selected_item_name
   local selected_item_uuid
   local selected_item_password
+
+  local -ra fzf_opts=(
+    --no-multi
+    --header="enter=password, ctrl-u=totp"
+    --bind "enter:execute(echo pass,{+})+abort"
+    --bind "ctrl-u:execute(echo totp,{+})+abort")
 
   spinner_start "Fetching items"
   items="$(get_op_items)"
@@ -147,14 +160,30 @@ main() {
     spinner_stop
   fi
 
-  selected_item_name="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf --no-multi)"
+  selected_item="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")"
 
-  if [[ -n "$selected_item_name" ]]; then
-    selected_item_uuid="$(echo "$items" | grep "$selected_item_name" | awk -F ',' '{ print $2 }')"
+  if [[ -n "$selected_item" ]]; then
+    selected_item_name=${selected_item#*,}
 
-    spinner_start "Fetching password"
-    selected_item_password="$(get_op_item_password "$selected_item_uuid")"
-    spinner_stop
+    selected_item_uuid="$(echo "$items" | grep "^$selected_item_name," | awk -F ',' '{ print $2 }')"
+
+    case ${selected_item%%,*} in
+      pass)
+        spinner_start "Fetching password"
+        selected_item_password="$(get_op_item_password "$selected_item_uuid")"
+        spinner_stop
+        ;;
+
+      totp)
+        spinner_start "Fetching totp"
+        selected_item_password="$(get_op_item_totp "$selected_item_uuid")"
+        spinner_stop
+        ;;
+
+      *)
+        display_message "Unknown item request"
+        ;;
+    esac
 
     if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
 
