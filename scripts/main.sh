@@ -137,7 +137,7 @@ main() {
 
   local -ra fzf_opts=(
     --no-multi
-    --header="enter=password, ctrl-u=totp"
+    "--header=enter=password, ctrl-u=totp"
     --bind "enter:execute(echo pass,{+})+abort"
     --bind "ctrl-u:execute(echo totp,{+})+abort")
 
