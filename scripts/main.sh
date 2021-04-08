@@ -36,7 +36,7 @@ spinner_stop() {
 # ------------------------------------------------------------------------------
 
 op_login() {
-  op signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
+  op --cache signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
   tput clear
 }
 
@@ -74,7 +74,7 @@ get_op_items() {
     "
   fi
 
-  op list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
+  op --cache list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
     | jq "$JQ_FILTER" --raw-output
 }
 
@@ -114,14 +114,14 @@ get_op_item_password() {
       end
     "
 
-  op get item "$ITEM_UUID" --session="$(op_get_session)" \
+  op --cache get item "$ITEM_UUID" --session="$(op_get_session)" \
     | jq "$JQ_FILTER" --raw-output
 }
 
 get_op_item_totp() {
   local -r ITEM_UUID="$1"
 
-  op get totp "$ITEM_UUID" --session="$(op_get_session)"
+  op --cache get totp "$ITEM_UUID" --session="$(op_get_session)"
 }
 
 # ------------------------------------------------------------------------------
