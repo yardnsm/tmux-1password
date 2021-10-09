@@ -120,12 +120,15 @@ Default: `'off'`
 By default, all of the items will be shown. If complete customization of url filtering is required,
 a `jq` filter can be provided to filter and map items.
 
-Items come in the following format from which the filter operates:
+Items comes from the [`op list items`
+command](https://support.1password.com/command-line/#list-objects) in the following format, from
+which the filter operates:
 
 ```json
 [
   {
     "uuid": "some-long-uuid",
+    "templateUuid": "001",
     "overview": {
       "URLs": [
         { "u": "sudolikeaboss://local" }

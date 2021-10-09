@@ -47,9 +47,11 @@ op_get_session() {
 get_op_items() {
 
   # The structure (we need) looks like the following:
+  #
   # [
   #   {
   #     "uuid": "some-long-uuid",
+  #     "templateUuid": "001",
   #     "overview": {
   #       "URLs": [
   #         { "u": "sudolikeaboss://local" }
@@ -59,6 +61,10 @@ get_op_items() {
   #     }
   #   }
   # ]
+  #
+  # Where `templateUuid` is:
+  #   - `"001"` for a login item
+  #   - `"005"` for a password item
 
   local JQ_FILTER
 
@@ -67,7 +73,12 @@ get_op_items() {
   else
     JQ_FILTER="
       .[]
-      | [select(.overview.URLs | map(select(.u)) | length == 1)?]
+      | [
+          select(
+            (.templateUuid == \"001\" and (.overview.URLs | map(select(.u)) | length >= 1)) or
+            (.templateUuid == \"005\")
+          )?
+        ]
       | map([ .overview.title, .uuid ]
       | join(\",\"))
       | .[]
