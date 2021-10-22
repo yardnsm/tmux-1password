@@ -178,10 +178,14 @@ set -g @1password-items-jq-filter ' \
 #### Debug mode
 
 If you're having any trouble with the plugin and would like to debug it's output in a more
-convenient way, this option will prevent the pane to be closed.
+convenient way, this option will prevent the pane from being closed.
 
-```
+```sh
 set -g @1password-debug 'on'
+
+# Or running the following withing tmux:
+tmux set-option -g @1password-debug "on"
+
 ```
 
 ## Prior art
