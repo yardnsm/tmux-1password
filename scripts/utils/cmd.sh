@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")" \
-  || exit 1
-
 # ------------------------------------------------------------------------------
 
-shellcheck \
-  ../**/*.sh ../*.tmux
+cmd::exists() {
+  command -v "$1" &> /dev/null
+  return $?
+}

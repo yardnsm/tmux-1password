@@ -5,7 +5,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")" \
 
 # ------------------------------------------------------------------------------
 
-source "./scripts/utils.sh"
+source "./scripts/utils/cmd.sh"
+source "./scripts/utils/tmux.sh"
+
+source "./scripts/options.sh"
 
 # ------------------------------------------------------------------------------
 
@@ -21,15 +24,13 @@ declare -a REQUIRED_COMMANDS=(
 
 main() {
   for cmd in "${REQUIRED_COMMANDS[@]}"; do
-    if ! is_cmd_exists "$cmd"; then
-      display_message "command '$cmd' not found"
+    if ! cmd::exists "$cmd"; then
+      tmux::display_message "command '$cmd' not found"
       return 1
     fi
   done
 
-  local -r opt_key="$(get_tmux_option "@1password-key" "u")"
-
-  tmux bind-key "$opt_key" \
+  tmux bind-key "$(options::keybinding)" \
     run "tmux split-window -l 10 \"$CURRENT_DIR/scripts/main.sh '#{pane_id}'\""
 }
 
