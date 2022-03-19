@@ -44,7 +44,7 @@ main() {
     return 0
   fi
 
-  spinner:start "Fetching items"
+  spinner::start "Fetching items"
   items="$(op::get_all_items)"
   spinner::stop
 
@@ -56,13 +56,13 @@ main() {
 
     case ${selected_item%%,*} in
       pass)
-        spinner:start "Fetching password"
+        spinner::start "Fetching password"
         selected_item_password="$(op::get_item_password "$selected_item_uuid")"
         spinner::stop
         ;;
 
       totp)
-        spinner:start "Fetching totp"
+        spinner::start "Fetching totp"
         selected_item_password="$(op::get_item_totp "$selected_item_uuid")"
         spinner::stop
         ;;

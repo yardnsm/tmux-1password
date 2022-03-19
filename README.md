@@ -4,7 +4,7 @@
 
 > Access your 1Password login items within tmux!
 
-![](.github/screenshot.gif)
+https://user-images.githubusercontent.com/11786506/159118616-9983fca2-edb5-4d0b-b827-43088e84d2c8.mp4
 
 This plugin allows you to access you 1Password items within tmux, using 1Password's CLI. It works
 for personal 1Password accounts, as well as teams accounts.

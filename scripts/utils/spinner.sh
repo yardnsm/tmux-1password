@@ -34,7 +34,7 @@ __start_spinner() {
   return $?
 }
 
-spinner:start() {
+spinner::start() {
   if options::debug_mode; then
     echo "... $1"
     return
