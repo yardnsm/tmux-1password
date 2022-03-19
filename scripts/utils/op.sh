@@ -25,11 +25,18 @@ op::verify_version() {
 op::verify_session() {
   local connected_accounts_count="$(( $(op account list | wc -l) - 1 ))"
 
-  if [[ "$connected_accounts_count" -eq 0 ]]; then
+  if [[ "$connected_accounts_count" -le 0 ]]; then
     prompt::ask "You haven't added any accounts to 1Password CLI. Would you like to add one now?"
 
     if prompt::answer_is_yes; then
       op account add
+
+      if [[ $? -ne 0 ]]; then
+        return 1
+      fi
+
+      tput clear
+      tmux::display_message "Successfully added new account."
     else
       return 1
     fi
