@@ -55,6 +55,15 @@ In any tmux mode:
     $ tmux source-file ~/.tmux.conf
     ```
 
+### Using older versions of 1Password's CLI
+
+If you're using an older version of the CLI (`< 2.0`), you can use this plugin via the
+[`legacy`](https://github.com/yardnsm/tmux-1password/tree/legacy) branch. For example, using TPM:
+
+```
+set -g @plugin 'yardnsm/tmux-1password#legacy'
+```
+
 ## Usage
 
 Initiate the plugin by using the keybind (`prefix + u` by default). If you haven't added an account
