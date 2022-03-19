@@ -1,10 +1,10 @@
 # tmux-1password
 
-[![Build Status](https://travis-ci.org/yardnsm/tmux-1password.svg?branch=master)](https://travis-ci.org/yardnsm/tmux-1password)
+[![Build Status](https://github.com/yardnsm/tmux-1password/workflows/main/badge.svg)](https://github.com/yardnsm/tmux-1password/actions)
 
 > Access your 1Password login items within tmux!
 
-![](.github/screenshot.gif)
+https://user-images.githubusercontent.com/11786506/159118616-9983fca2-edb5-4d0b-b827-43088e84d2c8.mp4
 
 This plugin allows you to access you 1Password items within tmux, using 1Password's CLI. It works
 for personal 1Password accounts, as well as teams accounts.
@@ -13,7 +13,7 @@ for personal 1Password accounts, as well as teams accounts.
 
 This plugin relies on the following:
 
-- [1Password CLI](https://support.1password.com/command-line-getting-started/)
+- [1Password CLI](https://developer.1password.com/docs/cli) >= 2.0.0
 - [fzf](https://github.com/junegunn/fzf)
 - [jq](https://stedolan.github.io/jq/)
 
@@ -55,24 +55,37 @@ In any tmux mode:
     $ tmux source-file ~/.tmux.conf
     ```
 
-## Usage
+### Using older versions of 1Password's CLI
 
-First, sign in with 1Password CLI by running the following in your terminal (you only need to do
-this *once*):
+If you're using an older version of the CLI (`< 2.0`), you can use this plugin via the
+[`legacy`](https://github.com/yardnsm/tmux-1password/tree/legacy) branch. For example, using TPM:
 
-```console
-$ op signin <signinaddress> <emailaddress> <secretkey>
+```
+set -g @plugin 'yardnsm/tmux-1password#legacy'
 ```
 
-For 1Password personal accounts, `<signinaddress>` should be `my.1password.com`. If you're using a
-team account, configure the [`@1password-subdomain`](#setting-the-signin-subdomain) option.
+## Usage
 
-From now on, initiate the plugin by using the keybind (`prefix + u` by default). A new pane will be
-opened in the bottom, listing the appropriate login items. Press `<Enter>` to choose a login item,
-and its password will automatically be filled.
+Initiate the plugin by using the keybind (`prefix + u` by default). If you haven't added an account
+to the 1Password's CLI, the plugin will prompt you to add one. You can also manage your connected
+accounts manually using the [`op account`
+command](https://developer.1password.com/docs/cli/reference/management-commands/account).
+
+Once you have an account, while initiating the plugin a new pane will be opened in the bottom,
+listing the appropriate login items. Press `<Enter>` to choose a login item, and its password will
+automatically be filled.
+
+You can also press `Ctrl+u` while hovering an item to fill a [One-Time
+Password](https://support.1password.com/one-time-passwords/).
 
 You may be required to perform a re-login (directly in the opened pane) since the 1Password CLI's
 sessions expires automatically after 30 minutes of inactivity.
+
+### Biometric Unlock
+
+For supported systems, you can enable [signing in with biometric
+unlock](https://developer.1password.com/docs/cli/about-biometric-unlock). When biometric unlock is
+enabled, you'll be prompted to authorize using it when then plugin is being initiated.
 
 ## Configuration
 
@@ -87,10 +100,18 @@ set -g @1password-key 'x'
 
 Default: `'u'`
 
-#### Setting the signin subdomain
+#### Setting the sign-in account
+
+1Password's CLI allows signing in with [multiple
+accounts](https://developer.1password.com/docs/cli/use-multiple-accounts/), while this plugin is
+able to work against a single one. You can specify which account to use using this option.
+
+As per the
+[documentation](https://developer.1password.com/docs/cli/use-multiple-accounts/#find-an-account-shorthand-and-id),
+you can use the shorthand, sign-in address, or account ID to refer to a specific account.
 
 ```
-set -g @1password-subdomain 'acme'
+set -g @1password-account 'acme'
 ```
 
 Default: `'my'`
@@ -115,65 +136,16 @@ set -g @1password-copy-to-clipboard 'on'
 
 Default: `'off'`
 
-#### Customize URL Filtering
+#### Filter items via tags
 
-By default, all of the items will be shown. If complete customization of url filtering is required,
-a `jq` filter can be provided to filter and map items.
+By default, all of the items will be shown. You can use this option (comma-separated) if you want to
+list items that has specific tags.
 
-Items comes from the [`op list items`
-command](https://support.1password.com/command-line/#list-objects) in the following format, from
-which the filter operates:
-
-```json
-[
-  {
-    "uuid": "some-long-uuid",
-    "templateUuid": "001",
-    "overview": {
-      "URLs": [
-        { "u": "sudolikeaboss://local" }
-      ],
-      "title": "Some item",
-      "tags": ["some_tag"]
-    }
-  }
-]
+```
+set -g @1password-filter-tags 'development,servers'
 ```
 
-
-Default: `''`
-
-#### Examples
-
-##### Filtering by tags
-
-The following example will filter only the items that has a tag with a value of `some_tag`.
-
-```sh
-set -g @1password-items-jq-filter '
-  .[] \
-  | [select(.overview.tags | map(select(. == "some_tag")) | length == 1)?] \
-  | map([ .overview.title, .uuid ] \
-  | join(",")) \
-  | .[] \
-'
-```
-
-##### Filtering by custom url
-
-The following example will filter only the items that has a website field with the value of
-`sudolikeaboss://local`, similar to the way
-[sudolikeaboss](https://github.com/ravenac95/sudolikeaboss) used to work.
-
-```sh
-set -g @1password-items-jq-filter ' \
-  .[] \
-  | [select(.overview.URLs | map(select(.u == "sudolikeaboss://local")) | length == 1)?] \
-  | map([ .overview.title, .uuid ] \
-  | join(",")) \
-  | .[] \
-'
-```
+Default: `''` (no tag filtering)
 
 #### Debug mode
 

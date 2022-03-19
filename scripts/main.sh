@@ -5,145 +5,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")" \
 
 # ------------------------------------------------------------------------------
 
-source "./utils.sh"
-source "./spinner.sh"
+source "./utils/clipboard.sh"
+source "./utils/cmd.sh"
+source "./utils/op.sh"
+source "./utils/prompt.sh"
+source "./utils/semver.sh"
+source "./utils/spinner.sh"
+source "./utils/tmux.sh"
 
-# ------------------------------------------------------------------------------
-
-declare -r TMP_TOKEN_FILE="$HOME/.op_tmux_token_tmp"
-
-declare -r OPT_SUBDOMAIN="$(get_tmux_option "@1password-subdomain" "my")"
-declare -r OPT_VAULT="$(get_tmux_option "@1password-vault" "")"
-declare -r OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@1password-copy-to-clipboard" "off")"
-declare -r OPT_ITEMS_JQ_FILTER="$(get_tmux_option "@1password-items-jq-filter" "")"
-declare -r OPT_DEBUG="$(get_tmux_option "@1password-debug" "off")"
-
-declare spinner_pid=""
-
-# ------------------------------------------------------------------------------
-
-spinner_start() {
-  if [[ "$OPT_DEBUG" == "on" ]]; then
-    echo "... $1"
-    return
-  fi
-
-  tput civis
-  show_spinner "$1" &
-  spinner_pid=$!
-}
-
-spinner_stop() {
-  if [[ "$OPT_DEBUG" == "on" ]]; then
-    return
-  fi
-
-  tput cnorm
-  kill "$spinner_pid" &> /dev/null
-  spinner_pid=""
-}
-
-# ------------------------------------------------------------------------------
-
-op_login() {
-  op --cache signin "$OPT_SUBDOMAIN" --output=raw > "$TMP_TOKEN_FILE"
-  tput clear
-}
-
-op_get_session() {
-  cat "$TMP_TOKEN_FILE" 2> /dev/null
-}
-
-get_op_items() {
-
-  # The structure (we need) looks like the following:
-  #
-  # [
-  #   {
-  #     "uuid": "some-long-uuid",
-  #     "templateUuid": "001",
-  #     "overview": {
-  #       "URLs": [
-  #         { "u": "sudolikeaboss://local" }
-  #       ],
-  #       "title": "Some item",
-  #       "tags": ["some_tag"]
-  #     }
-  #   }
-  # ]
-  #
-  # Where `templateUuid` is:
-  #   - `"001"` for a login item
-  #   - `"005"` for a password item
-
-  local JQ_FILTER
-
-  if [[ -n "$OPT_ITEMS_JQ_FILTER" ]]; then
-    JQ_FILTER="$OPT_ITEMS_JQ_FILTER"
-  else
-    JQ_FILTER="
-      .[]
-      | [
-          select(
-            (.templateUuid == \"001\" and (.overview.URLs | map(select(.u)) | length >= 1)) or
-            (.templateUuid == \"005\")
-          )?
-        ]
-      | map([ .overview.title, .uuid ]
-      | join(\",\"))
-      | .[]
-    "
-  fi
-
-  op --cache list items --vault="$OPT_VAULT" --session="$(op_get_session)" 2> /dev/null \
-    | jq "$JQ_FILTER" --raw-output
-}
-
-get_op_item_password() {
-  local -r ITEM_UUID="$1"
-
-  # There are two different kind of items that
-  # we support: login items and passwords.
-  #
-  # * Login items:
-  #       {
-  #         "details": {
-  #           "fields": [
-  #             {
-  #               "designation": "password",
-  #               "value": "supersecret"
-  #             }
-  #           ]
-  #         }
-  #       }
-  #
-  # * Password:
-  #       {
-  #         "details": {
-  #           "password": "supersecret"
-  #         }
-  #       }
-
-  local -r JQ_FILTER="
-    .details
-    | if .password and .password != \"\" then
-        .password
-      else
-        .fields[]
-        | select (.designation == \"password\")
-        | .value
-      end
-    "
-
-  op --cache get item "$ITEM_UUID" --session="$(op_get_session)" \
-    | jq "$JQ_FILTER" --raw-output
-}
-
-get_op_item_totp() {
-  local -r ITEM_UUID="$1"
-
-  op --cache get totp "$ITEM_UUID" --session="$(op_get_session)"
-}
+source "./options.sh"
 
 # ------------------------------------------------------------------------------
 
@@ -160,68 +30,64 @@ main() {
     --no-multi
     "--header=enter=password, ctrl-u=totp"
     --bind "enter:execute(echo pass,{+})+abort"
-    --bind "ctrl-u:execute(echo totp,{+})+abort")
+    --bind "ctrl-u:execute(echo totp,{+})+abort"
+  )
 
-  spinner_start "Fetching items"
-  items="$(get_op_items)"
-  spinner_stop
-
-  if [[ -z "$items" ]]; then
-
-    # Needs to login
-    op_login
-
-    if [[ -z "$(op_get_session)" ]]; then
-      display_message "1Password CLI signin has failed"
+  # Check for version
+  if ! op::verify_version; then
       return 0
-    fi
-
-    spinner_start "Fetching items"
-    items="$(get_op_items)"
-    spinner_stop
   fi
+
+  # Verify current session
+  if ! op::verify_session; then
+    tmux::display_message "1Password CLI signin has failed"
+    return 0
+  fi
+
+  spinner::start "Fetching items"
+  items="$(op::get_all_items)"
+  spinner::stop
 
   selected_item="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")"
 
   if [[ -n "$selected_item" ]]; then
     selected_item_name=${selected_item#*,}
-
     selected_item_uuid="$(echo "$items" | grep "^$selected_item_name," | awk -F ',' '{ print $2 }')"
 
     case ${selected_item%%,*} in
       pass)
-        spinner_start "Fetching password"
-        selected_item_password="$(get_op_item_password "$selected_item_uuid")"
-        spinner_stop
+        spinner::start "Fetching password"
+        selected_item_password="$(op::get_item_password "$selected_item_uuid")"
+        spinner::stop
         ;;
 
       totp)
-        spinner_start "Fetching totp"
-        selected_item_password="$(get_op_item_totp "$selected_item_uuid")"
-        spinner_stop
+        spinner::start "Fetching totp"
+        selected_item_password="$(op::get_item_totp "$selected_item_uuid")"
+        spinner::stop
         ;;
 
       *)
-        display_message "Unknown item request"
+        tmux::display_message "Unknown item request"
         ;;
     esac
 
-    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+    if options::copy_to_clipboard; then
 
       # Copy password to clipboard
-      copy_to_clipboard "$selected_item_password"
+      clipboard::copy "$selected_item_password"
 
       # Clear clipboard
-      clear_clipboard 30
+      clipboard::clear 30
     else
 
       # Use `send-keys`
       tmux send-keys -t "$ACTIVE_PANE" "$selected_item_password"
     fi
 
-    if [[ "$OPT_DEBUG" == "on" ]]; then
+    if options::debug_mode; then
       echo "tmux-1password: @1password-debug is on. Press [ENTER] to continue."
-      read -r
+      read -rs
     fi
   fi
 }
