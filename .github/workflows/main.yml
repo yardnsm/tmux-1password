@@ -15,4 +15,4 @@ jobs:
           sudo apt-get install -y shellcheck
 
       - name: Running tests
-        run: ./tests/shellcheck.sh
+        run: ./test/shellcheck.sh
