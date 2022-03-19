@@ -138,22 +138,6 @@ set -g @1password-filter-tags 'development,servers'
 
 Default: `''` (no tag filtering)
 
-#### Examples
-
-##### Filtering by tags
-
-The following example will filter only the items that has a tag with a value of `some_tag`.
-
-```sh
-set -g @1password-items-jq-filter '
-  .[] \
-  | [select(.overview.tags | map(select(. == "some_tag")) | length == 1)?] \
-  | map([ .overview.title, .uuid ] \
-  | join(",")) \
-  | .[] \
-'
-```
-
 #### Debug mode
 
 If you're having any trouble with the plugin and would like to debug it's output in a more
