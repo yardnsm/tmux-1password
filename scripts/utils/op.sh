@@ -71,31 +71,26 @@ op::get_all_items() {
   # Returned JSON structure reference:
   # https://developer.1password.com/docs/cli/item-template-json
 
-  local JQ_FILTER
-
-  if [[ -n "$(options::op_items_jq_filter)" ]]; then
-    JQ_FILTER="$(options::op_items_jq_filter)"
-  else
-    JQ_FILTER="
-      .[]
-      | [
-          select(
-            (.category == \"LOGIN\") or
-            (.category == \"PASSWORD\")
-          )?
-        ]
-      | map(
-          [ .title, .id ]
-          | join(\",\")
-        )
-      | .[]
-    "
-  fi
+  local -r JQ_FILTER="
+    .[]
+    | [
+        select(
+          (.category == \"LOGIN\") or
+          (.category == \"PASSWORD\")
+        )?
+      ]
+    | map(
+        [ .title, .id ]
+        | join(\",\")
+      )
+    | .[]
+  "
 
   op item list \
     --cache \
     --format json \
     --categories="LOGIN,PASSWORD" \
+    --tags="$(options::op_filter_tags)" \
     --vault="$(options::op_valut)" \
     --session="$(op::get_session)" \
     2> /dev/null \

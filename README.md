@@ -127,33 +127,16 @@ set -g @1password-copy-to-clipboard 'on'
 
 Default: `'off'`
 
-#### Customize items filtering
+#### Filter items via tags
 
-By default, all of the items will be shown. If complete customization of url filtering is required,
-a `jq` filter can be provided to filter and map items.
+By default, all of the items will be shown. You can use this option (comma-separated) if you want to
+list items that has specific tags.
 
-Items comes from the [`op list items`
-command](https://support.1password.com/command-line/#list-objects) in the following format, from
-which the filter operates:
-
-```json
-[
-  {
-    "uuid": "some-long-uuid",
-    "templateUuid": "001",
-    "overview": {
-      "URLs": [
-        { "u": "sudolikeaboss://local" }
-      ],
-      "title": "Some item",
-      "tags": ["some_tag"]
-    }
-  }
-]
+```
+set -g @1password-filter-tags 'development,servers'
 ```
 
-
-Default: `''`
+Default: `''` (no tag filtering)
 
 #### Examples
 

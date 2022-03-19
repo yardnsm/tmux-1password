@@ -7,7 +7,7 @@ declare -r __DEPRECATED_OPT_SUBDOMAIN="$(tmux::get_option "@1password-subdomain"
 declare -r OPT_KEYBINDING="$(tmux::get_option "@1password-key" "u")"
 declare -r OPT_ACCOUNT="$(tmux::get_option "@1password-account" "my")"
 declare -r OPT_VAULT="$(tmux::get_option "@1password-vault" "")"
-declare -r OPT_ITEMS_JQ_FILTER="$(tmux::get_option "@1password-items-jq-filter" "")"
+declare -r OPT_FILTER_TAGS="$(tmux::get_option "@1password-filter-tags" "")"
 declare -r OPT_COPY_TO_CLIPBOARD="$(tmux::get_option "@1password-copy-to-clipboard" "off")"
 declare -r OPT_DEBUG="$(tmux::get_option "@1password-debug" "off")"
 
@@ -29,8 +29,8 @@ options::op_valut() {
   echo "$OPT_VAULT"
 }
 
-options::op_items_jq_filter() {
-  echo "$OPT_ITEMS_JQ_FILTER"
+options::op_filter_tags() {
+  echo "$OPT_FILTER_TAGS"
 }
 
 options::copy_to_clipboard() {
