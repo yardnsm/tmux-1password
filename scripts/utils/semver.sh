@@ -12,10 +12,12 @@ semver::compare() {
         return 0
     fi
 
-    local IFS="."
     local i
-    local version_1="$1"
-    local version_2="$2"
+    local version_1
+    local version_2
+
+    IFS='.' read -r -a version_1 <<< "$1"
+    IFS='.' read -r -a version_2 <<< "$2"
 
     # Fill empty fields in version_1 with zeros
     for ((i=${#version_1[@]}; i<${#version_2[@]}; i++)); do
