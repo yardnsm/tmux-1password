@@ -47,7 +47,7 @@ main() {
   items="$(op::get_all_items)"
   spinner::stop
 
-  readarray -t selection <<< "$(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")"
+  IFS=$'\n' read -r -d '' -a selection < <(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")
   key_pressed="${selection[0]}"
   selected_item="${selection[1]}"
 
