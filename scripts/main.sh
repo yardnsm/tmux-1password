@@ -29,9 +29,8 @@ main() {
 
   local -ra fzf_opts=(
     --no-multi
-    "--header=enter=password, ctrl-u=totp"
-    --bind "enter:execute(echo pass,{+})+abort"
-    --bind "ctrl-u:execute(echo totp,{+})+abort"
+    --header="enter=password, ctrl-u=totp"
+    --expect=enter,ctrl-u
   )
 
   # Check for version
@@ -51,29 +50,31 @@ main() {
 
   synchronize_panes_reset_value=$(tmux::disable_synchronize_panes)
 
-  selected_item="$(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")"
+  IFS=$'\n' read -r -d '' -a selection < <(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")
+  key_pressed="${selection[0]}"
+  selected_item="${selection[1]}"
 
   tmux::set_synchronize_panes "${synchronize_panes_reset_value}"
 
-  if [[ -n "$selected_item" ]]; then
+  if [[ -n "${selected_item}" ]]; then
     selected_item_name=${selected_item#*,}
     selected_item_uuid="$(echo "$items" | grep "^$selected_item_name," | awk -F ',' '{ print $2 }')"
 
-    case ${selected_item%%,*} in
-      pass)
+    case ${key_pressed} in
+      enter)
         spinner::start "Fetching password"
         selected_item_password="$(op::get_item_password "$selected_item_uuid")"
         spinner::stop
         ;;
 
-      totp)
+      ctrl-u)
         spinner::start "Fetching totp"
         selected_item_password="$(op::get_item_totp "$selected_item_uuid")"
         spinner::stop
         ;;
 
       *)
-        tmux::display_message "Unknown item request"
+        tmux::display_message "Unknown key pressed"
         ;;
     esac
 
