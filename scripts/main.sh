@@ -29,8 +29,8 @@ main() {
 
   local -ra fzf_opts=(
     --no-multi
-    --header="enter=password, ctrl-u=totp"
-    --expect=enter,ctrl-u
+    "--header=enter=password,ctrl-u=totp"
+    "--expect=enter,ctrl-u"
   )
 
   # Check for version
