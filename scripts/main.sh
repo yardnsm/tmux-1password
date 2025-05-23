@@ -25,6 +25,7 @@ main() {
   local selected_item_name
   local selected_item_uuid
   local selected_item_password
+  local synchronize_panes_reset_value
 
   local -ra fzf_opts=(
     --no-multi
@@ -47,9 +48,13 @@ main() {
   items="$(op::get_all_items)"
   spinner::stop
 
+  synchronize_panes_reset_value=$(tmux::disable_synchronize_panes)
+
   IFS=$'\n' read -r -d '' -a selection < <(echo "$items" | awk -F ',' '{ print $1 }' | fzf "${fzf_opts[@]}")
   key_pressed="${selection[0]}"
   selected_item="${selection[1]}"
+
+  tmux::set_synchronize_panes "${synchronize_panes_reset_value}"
 
   if [[ -n "${selected_item}" ]]; then
     selected_item_name=${selected_item#*,}
