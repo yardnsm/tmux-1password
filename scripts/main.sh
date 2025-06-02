@@ -9,6 +9,7 @@ source "./utils/clipboard.sh"
 source "./utils/cmd.sh"
 source "./utils/op.sh"
 source "./utils/prompt.sh"
+source "./utils/recent.sh"
 source "./utils/semver.sh"
 source "./utils/spinner.sh"
 source "./utils/tmux.sh"
@@ -20,6 +21,7 @@ source "./options.sh"
 main() {
   local -r ACTIVE_PANE="$1"
 
+  local op_items
   local items
   local selected_item
   local selected_item_name
@@ -45,7 +47,8 @@ main() {
   fi
 
   spinner::start "Fetching items"
-  items="$(op::get_all_items)"
+  op_items="$(op::get_all_items)"
+  items=$(recent::get_all_items "$op_items")
   spinner::stop
 
   synchronize_panes_reset_value=$(tmux::disable_synchronize_panes)
@@ -77,6 +80,8 @@ main() {
         tmux::display_message "Unknown key pressed"
         ;;
     esac
+
+    recent::add "$selected_item_name"
 
     if options::copy_to_clipboard; then
 
